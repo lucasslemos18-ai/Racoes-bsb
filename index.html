@@ -3,215 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fab. Rações BSB - Auditoria</title>
-    <!-- Importação das Bibliotecas -->
+    <title>Fab. Rações BSB</title>
+    <!-- Biblioteca jsPDF via CDN (essencial estar no topo) -->
     <script src="https://cdnjs.cloudflare.com"></script>
     <style>
-        body { font-family: -apple-system, system-ui, sans-serif; padding: 15px; background: #f4f7f9; color: #333; margin: 0; }
-        .header-logos { display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 12px; margin-bottom: 15px; border-top: 6px solid #cc0000; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .header-logos img { height: 30px; width: auto; }
-        .card { background: white; padding: 18px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 3px 6px rgba(0,0,0,0.05); }
-        h3 { color: #cc0000; margin: 0 0 12px 0; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; font-size: 1.1em; }
-        .item-aval { border-bottom: 1px solid #f0f0f0; padding: 15px 0; }
-        .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        input[type="checkbox"] { width: 32px; height: 32px; accent-color: #28a745; }
-        input[type="text"], select { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; background: #fff; -webkit-appearance: none; }
-        .btn-acao { width: 100%; padding: 18px; margin: 10px 0; border: none; border-radius: 12px; font-weight: 700; font-size: 16px; color: white; cursor: pointer; }
-        .save-btn { background: #004a99; box-shadow: 0 4px #002b5a; }
-        .final-btn { background: #28a745; box-shadow: 0 4px #1a632a; }
-        .save-btn:active, .final-btn:active { transform: translateY(2px); box-shadow: none; }
-        #status-ranking { font-weight: bold; color: #004a99; margin: 10px 0; font-size: 0.9em; }
-        #loading { display: none; text-align: center; font-weight: bold; color: #cc0000; margin: 10px 0; }
+        body { font-family: sans-serif; padding: 15px; background: #f4f7f9; }
+        .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-top: 5px solid #cc0000; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h3 { color: #cc0000; margin-top: 0; }
+        input[type="text"], select { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .item-aval { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+        input[type="checkbox"] { width: 25px; height: 25px; }
+        .btn { width: 100%; padding: 18px; border: none; border-radius: 10px; color: white; font-weight: bold; font-size: 16px; margin: 10px 0; }
+        .btn-blue { background: #004a99; }
+        .btn-green { background: #28a745; }
+        #log { font-size: 12px; color: #666; text-align: center; }
     </style>
 </head>
 <body>
 
-<div class="header-logos">
-    <img src="https://upload.wikimedia.org" alt="JBS">
-    <div style="font-weight: 900; color: #444; font-size: 0.75em; text-align: center;">FAB. RAÇÕES BSB</div>
-    <img src="https://upload.wikimedia.org" alt="Seara">
-</div>
-
 <div class="card">
     <h3>1. Identificação</h3>
     <select id="area">
-        <option value="" disabled selected>Selecione a Área (1 a 36)</option>
+        <option value="" disabled selected>Área (1 a 36)</option>
         <script>for(let i=1;i<=36;i++) document.write(`<option value="${i}">Área ${i}</option>`);</script>
     </select>
-    <input type="text" id="responsavel_area" placeholder="Responsável da Área" style="margin-top:10px;">
-    <input type="text" id="avaliador_nome" placeholder="Nome do Avaliador" style="margin-top:10px;">
+    <input type="text" id="resp" placeholder="Responsável da Área">
+    <input type="text" id="aval" placeholder="Nome do Avaliador">
 </div>
 
 <div class="card">
-    <h3>2. Itens de Inspeção</h3>
-    <div id="checklist-container"></div>
+    <h3>2. Checklist</h3>
+    <div id="itens-container"></div>
 </div>
 
-<div id="loading">PROCESSANDO... AGUARDE</div>
-<button class="btn-acao save-btn" id="btnSalvar" onclick="salvarArea()">SALVAR ÁREA ATUAL</button>
-<button class="btn-acao final-btn" onclick="gerarPDF()">GERAR PDF E WHATSAPP</button>
-
-<div class="card" style="text-align:center;">
-    <div id="status-ranking">Nenhuma área salva ainda.</div>
-    <button onclick="if(confirm('Limpar tudo?')) location.reload()" style="background:none; border:none; color:gray; text-decoration:underline; margin-top:15px; font-size: 14px;">Reiniciar Aplicativo</button>
-</div>
+<button class="btn btn-blue" onclick="salvar()">SALVAR ÁREA</button>
+<button class="btn btn-green" onclick="gerarPDF()">GERAR PDF / WHATSAPP</button>
+<div id="log">Aguardando...</div>
 
 <script>
-    const itensConfig = ["Piso", "Escadas", "Corrimãos", "Portas", "Iluminação", "Equipamentos", "Maquinas", "Organização/Limpeza", "Condição Insegura"];
-    const bancoDeDados = [];
+    const itensNomes = ["Piso", "Escadas", "Corrimãos", "Portas", "Iluminação", "Equipamentos", "Maquinas", "Limpeza", "Condição Insegura"];
+    const dadosGerais = [];
 
-    // Renderizar Itens Manualmente
-    const container = document.getElementById('checklist-container');
-    itensConfig.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'item-aval';
-        div.innerHTML = `
-            <div class="row">
-                <span style="${item === 'Condição Insegura' ? 'color:red; font-weight:bold;' : 'font-weight:600;'}">${item}</span>
-                <input type="checkbox" class="check-item" data-name="${item}">
+    // Gerar Itens
+    const container = document.getElementById('itens-container');
+    itensNomes.forEach(item => {
+        container.innerHTML += `
+            <div class="item-aval">
+                <span style="${item==='Condição Insegura'?'color:red;font-weight:bold':''}">${item}</span>
+                <input type="checkbox" class="chk" data-name="${item}">
             </div>
-            <input type="file" accept="image/*" capture="camera" class="foto-item" data-name="${item}">
-            <input type="text" class="obs-item" data-name="${item}" placeholder="Observações..." style="margin-top:8px;">
+            <input type="file" accept="image/*" capture="camera" class="foto" data-name="${item}">
+            <input type="text" class="obs" data-name="${item}" placeholder="Obs...">
         `;
-        container.appendChild(div);
     });
 
-    function processarFoto(input) {
-        return new Promise((resolve) => {
-            if (!input.files || input.files.length === 0) return resolve(null);
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.onerror = () => resolve(null);
-            reader.readAsDataURL(input.files[0]);
-        });
-    }
+    function salvar() {
+        const area = document.getElementById('area').value;
+        const resp = document.getElementById('resp').value;
+        const aval = document.getElementById('aval').value;
 
-    async function salvarArea() {
-        const areaId = document.getElementById('area').value;
-        const resp = document.getElementById('responsavel_area').value;
-        const aval = document.getElementById('avaliador_nome').value;
+        if(!area || !resp || !aval) return alert("Preencha os campos!");
 
-        if (!areaId || !resp || !aval) {
-            alert("⚠️ Preencha Área, Responsável e Avaliador!");
-            return;
-        }
+        const dadosArea = { area, resp, aval, nota: 100, itens: [] };
+        const checks = document.querySelectorAll('.chk');
+        const fotos = document.querySelectorAll('.foto');
+        const obss = document.querySelectorAll('.obs');
 
-        document.getElementById('loading').style.display = 'block';
-        document.getElementById('btnSalvar').disabled = true;
-
-        const dadosArea = {
-            id: areaId,
-            responsavel: resp,
-            avaliador: aval,
-            data: new Date().toLocaleString('pt-BR'),
-            itens: [],
-            nota: 100
-        };
-
-        const checks = document.querySelectorAll('.check-item');
-        const fotos = document.querySelectorAll('.foto-item');
-        const obss = document.querySelectorAll('.obs-item');
-
-        // Cálculo da Nota
-        let condInsegura = false;
-        checks.forEach(c => { if (c.dataset.name === "Condição Insegura" && c.checked) condInsegura = true; });
-
-        if (condInsegura) {
+        if(document.querySelector('.chk[data-name="Condição Insegura"]').checked) {
             dadosArea.nota = 0;
         } else {
-            checks.forEach(c => { if (c.dataset.name !== "Condição Insegura" && !c.checked) dadosArea.nota -= 10; });
+            checks.forEach(c => { if(c.dataset.name !== "Condição Insegura" && !c.checked) dadosArea.nota -= 10; });
         }
 
-        // Captura de Itens e Fotos
-        for (let i = 0; i < itensConfig.length; i++) {
-            const fotoBase64 = await processarFoto(fotos[i]);
-            dadosArea.itens.push({
-                nome: itensConfig[i],
-                ok: checks[i].checked,
-                obs: obss[i].value || "N/A",
-                foto: fotoBase64
-            });
-            // Reset campos
-            checks[i].checked = false;
-            obss[i].value = "";
-            fotos[i].value = "";
-        }
+        // Aviso de salvamento (sem processar fotos pesado agora para não travar)
+        dadosArea.itens = Array.from(checks).map((c, i) => ({
+            nome: c.dataset.name,
+            ok: c.checked,
+            obs: obss[i].value
+        }));
 
-        bancoDeDados.push(dadosArea);
-        document.getElementById('area').value = "";
-        document.getElementById('status-ranking').innerHTML = `✅ Áreas Salvas: ${bancoDeDados.length}`;
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('btnSalvar').disabled = false;
+        dadosGerais.push(dadosArea);
+        document.getElementById('log').innerHTML = `Áreas salvas: ${dadosGerais.length}`;
+        alert("Área " + area + " salva!");
         
-        alert(`Área ${areaId} salva com sucesso!`);
-        window.scrollTo(0,0);
+        // Limpar campos
+        document.getElementById('area').value = "";
+        checks.forEach(c => c.checked = false);
+        obss.forEach(o => o.value = "");
     }
 
-    async function gerarPDF() {
-        if (bancoDeDados.length === 0) return alert("❌ Salve uma área primeiro!");
-
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        const dataHoje = new Date().toLocaleDateString('pt-BR');
-
-        // Página 1: Cabeçalho e Ranking
-        doc.setFontSize(18); doc.setTextColor(200, 0, 0);
-        doc.text("FAB. RAÇÕES BSB - JBS / SEARA", 105, 20, {align:"center"});
-        doc.setFontSize(10); doc.setTextColor(100);
-        doc.text(`Relatório Semanal - Emitido em: ${dataHoje}`, 105, 28, {align:"center"});
+    function gerarPDF() {
+        if(dadosGerais.length === 0) return alert("Salve uma área!");
         
-        doc.setFontSize(14); doc.setTextColor(0);
-        doc.text("CLASSIFICAÇÃO GERAL (RANKING):", 20, 45);
-        
-        const sorted = [...bancoDeDados].sort((a,b) => b.nota - a.nota);
-        sorted.forEach((a, i) => {
-            const corNota = a.nota < 70 ? [200, 0, 0] : [0, 100, 0];
-            doc.setTextColor(corNota[0], corNota[1], corNota[2]);
-            doc.text(`${i+1}º Área ${a.id}: ${a.nota}% (Avaliador: ${a.avaliador})`, 25, 55 + (i*10));
-        });
-
-        // Detalhamento por Área
-        for (let area of bancoDeDados) {
-            doc.addPage();
-            doc.setTextColor(0);
-            doc.setFontSize(16); doc.text(`DETALHES: ÁREA ${area.id}`, 10, 20);
-            doc.setFontSize(10); doc.text(`Avaliador: ${area.avaliador} | Responsável: ${area.responsavel}`, 10, 28);
-            doc.text(`Data: ${area.data} | Nota Final: ${area.nota}%`, 10, 34);
-            doc.line(10, 36, 200, 36);
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
             
-            let y = 45;
-            for (let it of area.itens) {
-                doc.setFont("helvetica", "bold");
-                doc.text(`${it.ok ? '[OK]' : '[  ]'} ${it.nome}`, 10, y);
-                doc.setFont("helvetica", "normal");
-                doc.text(`Obs: ${it.obs}`, 10, y + 5);
-                
-                if (it.foto) {
-                    try { doc.addImage(it.foto, 'JPEG', 145, y - 5, 50, 35); y += 25; } catch(e) {}
-                }
-                y += 15;
-                if (y > 270) { doc.addPage(); y = 20; }
-            }
-        }
+            doc.text("RELATORIO FAB. RACOES BSB", 10, 10);
+            let y = 20;
 
-        // Conversão e Compartilhamento para iOS
-        const pdfBlob = doc.output('blob');
-        const filename = `Relatorio_BSB_${dataHoje.replace(/\//g,'-')}.pdf`;
-        const file = new File([pdfBlob], filename, { type: 'application/pdf' });
-
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    files: [file],
-                    title: 'Relatório BSB',
-                    text: 'Relatório de Auditoria'
+            dadosGerais.forEach(d => {
+                doc.setFontSize(12);
+                doc.text(`Area: ${d.area} - Nota: ${d.nota}% - Resp: ${d.resp}`, 10, y);
+                y += 10;
+                d.itens.forEach(it => {
+                    doc.setFontSize(9);
+                    doc.text(`${it.ok?'[OK]':'[ ]'} ${it.nome}: ${it.obs}`, 15, y);
+                    y += 6;
+                    if(y > 280) { doc.addPage(); y = 20; }
                 });
-            } catch (err) {
-                const url = URL.createObjectURL(pdfBlob);
-                window.open(url, '_blank');
-            }
-        } else {
-            doc.save(filename);
+                y += 5;
+            });
+
+            // Método universal de download para mobile
+            doc.save("Relatorio_BSB.pdf");
+            alert("O download foi iniciado. Caso não abra, verifique seus downloads e anexe ao WhatsApp.");
+
+        } catch (e) {
+            alert("Erro ao criar PDF: " + e.message);
         }
     }
 </script>
