@@ -55,11 +55,11 @@
     <div id="corpo-rel"></div>
     <button class="btn btn-wa no-print" onclick="compartilharTextoWA()">COMPARTILHAR NO WHATSAPP</button>
     <button class="btn btn-save no-print" onclick="window.print()">SALVAR PDF (COM FOTOS)</button>
-    <button class="btn no-print" style="background:#888;" onclick="location.reload()">VOLTAR</button>
+    <button class="btn no-print" style="background:#888;" onclick="location.reload()">VOLTAR / REINICIAR</button>
 </div>
 
 <script>
-    // Tópicos atualizados conforme sua solicitação
+    // Tópicos atualizados: Fusão em "Estruturas" e Renomeação para "Elétrica"
     const itens = ["Estruturas", "Elétrica", "Equipamentos", "Maquinas", "Limpeza", "Condição Insegura"];
     const db = [];
     const fotosTemp = {};
@@ -104,7 +104,7 @@
         if(document.querySelector('.c-check[data-n="Condição Insegura"]').checked) {
             dados.nota = 0;
         } else {
-            // Nota agora dividida pelos 5 itens (Estruturas, Elétrica, Equipamentos, Máquinas, Limpeza)
+            // Nota calculada sobre 5 itens (Estruturas, Elétrica, Equipamentos, Máquinas, Limpeza)
             checks.forEach(c => { if(c.dataset.n !== "Condição Insegura" && !c.checked) dados.nota -= 20; });
         }
         dados.nota = Math.max(0, Math.round(dados.nota));
@@ -116,7 +116,7 @@
         });
 
         db.push(dados);
-        document.getElementById('contador').innerText = `Áreas Salvas: ${db.length}`;
+        document.getElementById('contador').innerText = `✅ Áreas Salvas: ${db.length}`;
         alert("Área " + area + " salva!");
         window.scrollTo(0,0);
     }
@@ -127,12 +127,12 @@
         document.getElementById('relatorio-view').style.display = 'block';
 
         const cont = document.getElementById('corpo-rel');
-        cont.innerHTML = "<h3>Ranking Geral:</h3>";
+        cont.innerHTML = "<h3>Ranking de Auditoria:</h3>";
         db.sort((a,b) => b.nota - a.nota).forEach(d => {
             cont.innerHTML += `<p>• Área ${d.area}: <b>${d.nota}%</b> (Resp: ${d.resp})</p>`;
         });
 
-        cont.innerHTML += "<hr><h3>Evidências por Área:</h3>";
+        cont.innerHTML += "<hr><h3>Detalhamento:</h3>";
         db.forEach(d => {
             let html = `<div class="area-box"><b>ÁREA ${d.area} - NOTA: ${d.nota}%</b><br>`;
             d.detalhes.forEach(it => {
