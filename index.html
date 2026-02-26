@@ -3,63 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fab. Rações BSB - JBS/Seara</title>
+    <title>Fab. Rações BSB - Auditoria</title>
     <script src="https://cdnjs.cloudflare.com"></script>
     <script src="https://cdn.jsdelivr.net"></script>
     <style>
         body { font-family: -apple-system, sans-serif; padding: 15px; background: #f4f7f9; color: #333; margin: 0; }
         .header-logos { display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 12px; margin-bottom: 15px; border-top: 6px solid #cc0000; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .header-logos img { height: 30px; }
-        .title-app { text-align: center; color: #004a99; font-weight: 800; margin: 10px 0; font-size: 1.1em; text-transform: uppercase; }
         .card { background: white; padding: 18px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 3px 6px rgba(0,0,0,0.05); }
-        h3 { color: #cc0000; margin: 0 0 12px 0; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; font-size: 1em; }
+        h3 { color: #cc0000; margin: 0 0 12px 0; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; font-size: 1.1em; }
         .item-aval { border-bottom: 1px solid #f0f0f0; padding: 15px 0; }
         .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        input[type="checkbox"] { width: 30px; height: 30px; accent-color: #28a745; }
+        input[type="checkbox"] { width: 32px; height: 32px; accent-color: #28a745; }
         input[type="text"], select { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; background: #fff; -webkit-appearance: none; }
-        input[type="file"] { margin: 10px 0; font-size: 14px; width: 100%; }
-        
-        /* Ajuste Assinatura iPhone */
-        #signature-wrapper { position: relative; width: 100%; height: 200px; border: 2px dashed #bbb; border-radius: 10px; background: #fff; touch-action: none; }
-        #signature-pad { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border-radius: 10px; }
-        
-        .btn-acao { width: 100%; padding: 18px; margin: 10px 0; border: none; border-radius: 12px; font-weight: 700; font-size: 16px; color: white; }
+        #signature-wrapper { position: relative; width: 100%; height: 200px; border: 2px dashed #bbb; border-radius: 10px; background: #fff; touch-action: none; margin-top:10px; }
+        #signature-pad { width: 100%; height: 100%; border-radius: 10px; }
+        .btn-acao { width: 100%; padding: 20px; margin: 10px 0; border: none; border-radius: 12px; font-weight: 700; font-size: 16px; color: white; }
         .save-btn { background: #004a99; }
         .final-btn { background: #28a745; }
-        .reset-btn { background: #6c757d; font-size: 0.8em; margin-top: 20px; }
+        #loading { display:none; color: #004a99; font-weight: bold; text-align: center; margin: 10px 0; }
     </style>
 </head>
 <body>
 
 <div class="header-logos">
     <img src="https://upload.wikimedia.org">
-    <div style="font-weight: 900; color: #444; font-size: 0.7em; text-align: center;">FAB. RAÇÕES BSB</div>
+    <div style="font-weight: 900; color: #444; font-size: 0.75em; text-align: center;">FAB. RAÇÕES BSB</div>
     <img src="https://upload.wikimedia.org">
 </div>
 
-<div class="title-app">Checklist de Auditoria</div>
-
 <div class="card">
-    <h3>1. Identificação da Área</h3>
-    <label style="font-size: 0.8em; color: #666;">Selecione o Número da Área:</label>
-    <select id="area" style="margin-bottom: 15px;">
-        <option value="" disabled selected>Escolha de 1 a 36...</option>
+    <h3>1. Identificação</h3>
+    <select id="area">
+        <option value="" disabled selected>Selecione a Área (1 a 36)</option>
         <script>for(let i=1;i<=36;i++) document.write(`<option value="${i}">Área ${i}</option>`);</script>
     </select>
-    
-    <label style="font-size: 0.8em; color: #666;">Responsável da Área:</label>
-    <input type="text" id="responsavel_area" placeholder="Nome do responsável">
+    <input type="text" id="responsavel_area" placeholder="Responsável da Área" style="margin-top:10px;">
 </div>
 
 <div class="card" id="checklist">
-    <h3>2. Itens de Inspeção</h3>
+    <h3>2. Itens</h3>
     <script>
         const itensConfig = ["Piso", "Escadas", "Corrimãos", "Portas", "Iluminação", "Equipamentos", "Maquinas", "Organização/Limpeza", "Condição Insegura"];
         itensConfig.forEach(item => {
             document.write(`
                 <div class="item-aval">
                     <div class="row">
-                        <span style="font-weight:600; ${item === 'Condição Insegura' ? 'color:red;' : ''}">${item}</span>
+                        <span style="${item === 'Condição Insegura' ? 'color:red; font-weight:bold;' : ''}">${item}</span>
                         <input type="checkbox" id="check-${item}">
                     </div>
                     <input type="file" accept="image/*" capture="camera" id="img-${item}">
@@ -71,132 +61,140 @@
 </div>
 
 <div class="card">
-    <h3>3. Assinatura do Avaliador</h3>
-    <div id="signature-wrapper">
-        <canvas id="signature-pad"></canvas>
-    </div>
-    <button onclick="limparAssinatura()" style="width:100%; background:none; border:none; color:#004a99; margin-top:10px; font-size:14px; text-decoration:underline;">Limpar Traço</button>
+    <h3>3. Assinatura</h3>
+    <div id="signature-wrapper"><canvas id="signature-pad"></canvas></div>
+    <button onclick="signaturePad.clear()" style="width:100%; background:none; border:none; color:blue; margin-top:10px; text-decoration:underline;">Limpar Assinatura</button>
 </div>
 
-<button class="btn-acao save-btn" onclick="salvarAvaliacao()">SALVAR DADOS DA ÁREA</button>
-<button class="btn-acao final-btn" onclick="gerarRelatorioFinal()">GERAR RELATÓRIO PDF</button>
+<div id="loading">PROCESSANDO DADOS... AGUARDE</div>
+<button class="btn-acao save-btn" id="btnSalvar" onclick="salvarAvaliacao()">SALVAR ÁREA ATUAL</button>
+<button class="btn-acao final-btn" onclick="gerarRelatorioFinal()">GERAR PDF E WHATSAPP</button>
 
-<div class="card" style="text-align: center;">
-    <div id="status-ranking" style="font-size: 0.9em; margin-bottom: 10px;">Aguardando primeira área...</div>
-    <button class="btn-acao reset-btn" onclick="location.reload()">REINICIAR TUDO</button>
+<div class="card" style="text-align:center;">
+    <div id="status-ranking">Nenhuma área salva.</div>
+    <button onclick="location.reload()" style="margin-top:15px; background:none; border:none; color:gray; text-decoration:underline;">Reiniciar App</button>
 </div>
 
 <script>
     let signaturePad;
     const avaliacoesSalvas = [];
 
-    // Inicialização do Canvas corrigida para iOS
     window.onload = function() {
         const canvas = document.getElementById('signature-pad');
-        function resizeCanvas() {
-            const ratio = Math.max(window.devicePixelRatio || 1, 1);
-            canvas.width = canvas.offsetWidth * ratio;
-            canvas.height = canvas.offsetHeight * ratio;
-            canvas.getContext("2d").scale(ratio, ratio);
-            if (signaturePad) signaturePad.clear();
-        }
-        window.addEventListener("resize", resizeCanvas);
-        resizeCanvas();
-        signaturePad = new SignaturePad(canvas, { backgroundColor: 'rgb(255, 255, 255)', penColor: 'rgb(0, 0, 0)' });
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        canvas.getContext("2d").scale(ratio, ratio);
+        signaturePad = new SignaturePad(canvas, { backgroundColor: 'rgb(255, 255, 255)' });
     };
 
-    function limparAssinatura() { signaturePad.clear(); }
-
-    const toBase64 = file => new Promise((res) => {
-        if(!file || file.length === 0) return res(null);
+    const toBase64 = file => new Promise((resolve) => {
+        if(!file || !file[0]) return resolve(null);
         const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => resolve(null);
         reader.readAsDataURL(file[0]);
-        reader.onload = () => res(reader.result);
-        reader.onerror = () => res(null);
     });
 
     async function salvarAvaliacao() {
         const areaId = document.getElementById('area').value;
         const resp = document.getElementById('responsavel_area').value;
+        
+        if(!areaId || !resp) return alert("Preencha Área e Responsável!");
 
-        if(!areaId || !resp) return alert("Por favor, preencha a Área e o Responsável!");
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('btnSalvar').disabled = true;
 
-        const dados = { 
+        const dados = {
             nome: "Área " + areaId,
             responsavel: resp,
             data: new Date().toLocaleString('pt-BR'),
+            nota: 100,
             itens: [],
             assinatura: signaturePad.isEmpty() ? null : signaturePad.toDataURL()
         };
 
-        let nota = 100;
+        // Lógica de Nota
         if(document.getElementById('check-Condição Insegura').checked) {
-            nota = 0;
+            dados.nota = 0;
         } else {
             itensConfig.slice(0, -1).forEach(it => {
-                if(!document.getElementById(`check-${it}`).checked) nota -= 10;
+                if(!document.getElementById(`check-${it}`).checked) dados.nota -= 10;
             });
         }
-        dados.nota = nota;
 
+        // Processar Itens
         for(let it of itensConfig) {
-            const fileInput = document.getElementById(`img-${it}`);
+            const inputFoto = document.getElementById(`img-${it}`);
+            const fotoBase64 = await toBase64(inputFoto.files);
+            
             dados.itens.push({
                 nome: it,
                 ok: document.getElementById(`check-${it}`).checked,
                 obs: document.getElementById(`obs-${it}`).value || "",
-                foto: await toBase64(fileInput.files)
+                foto: fotoBase64
             });
-            // Limpa campos
+
+            // Resetar campos para a próxima área
             document.getElementById(`check-${it}`).checked = false;
             document.getElementById(`obs-${it}`).value = "";
-            fileInput.value = "";
+            inputFoto.value = "";
         }
 
         avaliacoesSalvas.push(dados);
-        signaturePad.clear();
+        
+        // Resetar Identificação e Assinatura
         document.getElementById('area').value = "";
         document.getElementById('responsavel_area').value = "";
+        signaturePad.clear();
         
-        document.getElementById('status-ranking').innerHTML = `<b>Áreas Processadas: ${avaliacoesSalvas.length}</b>`;
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('btnSalvar').disabled = false;
+        document.getElementById('status-ranking').innerHTML = `<b>Áreas Salvas: ${avaliacoesSalvas.length}</b>`;
+        
+        alert("✅ Área " + areaId + " salva com sucesso!");
         window.scrollTo(0,0);
-        alert("Área salva com sucesso!");
     }
 
     async function gerarRelatorioFinal() {
-        if(avaliacoesSalvas.length === 0) return alert("Salve uma área primeiro!");
+        if(avaliacoesSalvas.length === 0) return alert("Salve ao menos uma área primeiro!");
+        
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
-        // Pag 1: Ranking
-        doc.setFontSize(20); doc.setTextColor(200, 0, 0);
-        doc.text("FAB. RAÇÕES BSB - RANKING", 105, 20, {align:"center"});
+        // Ranking
+        doc.setFontSize(18); doc.setTextColor(200, 0, 0);
+        doc.text("FAB. RAÇÕES BSB - JBS/SEARA", 105, 20, {align:"center"});
         
         const sorted = [...avaliacoesSalvas].sort((a,b) => b.nota - a.nota);
-        doc.setFontSize(14); doc.setTextColor(0,100,0);
-        doc.text("Top 3 Melhores:", 20, 40);
-        sorted.slice(0,3).forEach((a, i) => doc.text(`${i+1}. ${a.nome}: ${a.nota}%`, 25, 50+(i*10)));
+        doc.setFontSize(12); doc.setTextColor(0);
+        doc.text("RANKING DE PERFORMANCE:", 10, 40);
+        sorted.forEach((a, i) => doc.text(`${i+1}. ${a.nome}: ${a.nota}%`, 15, 50+(i*8)));
 
-        // Paginas de Detalhes
+        // Detalhes
         for(let av of avaliacoesSalvas) {
             doc.addPage();
-            doc.setTextColor(0);
-            doc.text(`${av.nome} - Responsável: ${av.responsavel}`, 10, 20);
-            doc.text(`Nota: ${av.nota}% | Data: ${av.data}`, 10, 30);
-            let y = 50;
+            doc.setFontSize(16); doc.text(`${av.nome} (${av.nota}%)`, 10, 20);
+            doc.setFontSize(10); doc.text(`Resp: ${av.responsavel} | ${av.data}`, 10, 28);
+            
+            let y = 40;
             for(let it of av.itens) {
-                doc.setFontSize(10);
                 doc.text(`${it.ok?'[OK]':'[ ]'} ${it.nome}: ${it.obs}`, 10, y);
                 if(it.foto) { try { doc.addImage(it.foto, 'JPEG', 150, y-5, 40, 25); y+=20; } catch(e){} }
-                y+=10;
-                if(y>270){doc.addPage(); y=20;}
+                y += 10;
+                if(y > 270) { doc.addPage(); y = 20; }
             }
-            if(av.assinatura) doc.addImage(av.assinatura, 'PNG', 10, 250, 50, 25);
+            if(av.assinatura) doc.addImage(av.assinatura, 'PNG', 10, 250, 40, 20);
         }
 
         const pdfBlob = doc.output('blob');
-        const file = new File([pdfBlob], 'Relatorio_BSB.pdf', { type: 'application/pdf' });
-        if (navigator.share) await navigator.share({ files: [file] }); else doc.save();
+        const file = new File([pdfBlob], 'Relatorio_Racoes.pdf', { type: 'application/pdf' });
+        
+        if (navigator.share) {
+            await navigator.share({ files: [file], title: 'Checklist Rações BSB' });
+        } else {
+            doc.save('Relatorio_Racoes_BSB.pdf');
+        }
     }
 </script>
 </body>
