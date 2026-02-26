@@ -4,215 +4,180 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Fab. Rações BSB - Auditoria</title>
-    
-    <!-- Chamada da Biblioteca com Fallback -->
-    <script src="https://cdnjs.cloudflare.com"></script>
-
     <style>
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 15px; background: #f0f2f5; margin: 0; color: #1c1e21; }
-        .header { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 12px; border-radius: 12px; border-top: 6px solid #cc0000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .header img { height: 35px; width: auto; }
-        .card { background: #fff; padding: 20px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #ddd; }
-        h3 { color: #cc0000; margin: 0 0 15px 0; font-size: 1.2em; border-bottom: 2px solid #f0f2f5; padding-bottom: 8px; text-transform: uppercase; }
-        input[type="text"], select { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ccd0d5; border-radius: 8px; box-sizing: border-box; font-size: 16px; background: #f5f6f7; color: #1c1e21; }
-        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #ebedf0; }
-        .item-row span { font-weight: 600; font-size: 1.05em; }
-        input[type="checkbox"] { width: 30px; height: 30px; cursor: pointer; accent-color: #28a745; }
-        .btn { width: 100%; padding: 20px; border: none; border-radius: 12px; color: #fff; font-weight: bold; font-size: 17px; margin: 10px 0; cursor: pointer; transition: background 0.3s; }
-        .btn-save { background: #004a99; box-shadow: 0 4px #003366; }
-        .btn-pdf { background: #28a745; box-shadow: 0 4px #1e7e34; }
-        .btn:active { transform: translateY(2px); box-shadow: none; }
-        #status-msg { text-align: center; font-weight: bold; color: #004a99; margin: 15px 0; font-size: 1.1em; }
-        .loading-overlay { display: none; text-align: center; color: #cc0000; font-weight: bold; padding: 15px; background: #fff; border-radius: 8px; margin-bottom: 10px; border: 1px solid #cc0000; }
+        /* Estilos para o App */
+        body { font-family: -apple-system, sans-serif; padding: 15px; background: #f0f2f5; color: #333; margin: 0; }
+        .no-print { display: block; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px; border-radius: 10px; border-top: 5px solid #cc0000; margin-bottom: 15px; }
+        .header img { height: 30px; }
+        .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h3 { color: #cc0000; margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
+        input[type="checkbox"] { width: 30px; height: 30px; }
+        .btn { width: 100%; padding: 18px; border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 16px; margin: 10px 0; cursor: pointer; }
+        .btn-save { background: #004a99; }
+        .btn-report { background: #28a745; }
+        
+        /* Estilos para o Relatório (O que será impresso/salvo) */
+        #relatorio-final { display: none; background: white; padding: 20px; }
+        .print-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+        .area-block { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; page-break-inside: avoid; }
+        .ranking-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        .ranking-table th, .ranking-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .foto-print { max-width: 200px; max-height: 150px; display: block; margin-top: 5px; border: 1px solid #ccc; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            #relatorio-final { display: block !important; }
+            body { background: white; padding: 0; }
+        }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <img src="https://upload.wikimedia.org" alt="JBS">
-    <div style="font-weight: 900; color: #333; font-size: 0.8em; text-align: center; line-height: 1.2;">FAB. RAÇÕES<br>BSB</div>
-    <img src="https://upload.wikimedia.org" alt="Seara">
+<div class="no-print">
+    <div class="header">
+        <img src="https://upload.wikimedia.org">
+        <div style="font-weight: bold; font-size: 0.8em; text-align: center;">FAB. RAÇÕES BSB</div>
+        <img src="https://upload.wikimedia.org">
+    </div>
+
+    <div class="card">
+        <h3>1. Identificação</h3>
+        <select id="area_num">
+            <option value="" disabled selected>Escolha a Área (1 a 36)</option>
+            <script>for(let i=1;i<=36;i++) document.write(`<option value="${i}">Área ${i}</option>`);</script>
+        </select>
+        <input type="text" id="resp_nome" placeholder="Responsável da Área">
+        <input type="text" id="aval_nome" placeholder="Nome do Avaliador">
+    </div>
+
+    <div class="card">
+        <h3>2. Checklist</h3>
+        <div id="itens-box"></div>
+    </div>
+
+    <button class="btn btn-save" onclick="salvarArea()">SALVAR ÁREA ATUAL</button>
+    <button class="btn btn-report" onclick="gerarRelatorio()">VISUALIZAR RELATÓRIO FINAL</button>
+    <p id="status" style="text-align:center; font-weight:bold; color:#004a99;">Nenhuma área salva.</p>
 </div>
 
-<div class="card">
-    <h3>1. Identificação</h3>
-    <select id="input_area">
-        <option value="" disabled selected>Escolha a Área (1 a 36)</option>
-        <script>for(let i=1;i<=36;i++) document.write(`<option value="${i}">Área ${i}</option>`);</script>
-    </select>
-    <input type="text" id="input_resp" placeholder="Responsável da Área">
-    <input type="text" id="input_aval" placeholder="Nome do Avaliador">
+<!-- ESTA PARTE SÓ APARECE NO MOMENTO DO RELATÓRIO -->
+<div id="relatorio-final">
+    <div class="print-header">
+        <h2>FAB. RAÇÕES BSB - JBS/SEARA</h2>
+        <p>Relatório de Auditoria Semanal - Data: <span id="print-data"></span></p>
+    </div>
+    
+    <div id="ranking-section">
+        <h3>Ranking de Performance</h3>
+        <table class="ranking-table" id="tabela-ranking">
+            <thead><tr><th>Posição</th><th>Área</th><th>Nota</th><th>Avaliador</th></tr></thead>
+            <tbody id="corpo-ranking"></tbody>
+        </table>
+    </div>
+
+    <div id="detalhes-section">
+        <h3>Detalhamento por Área</h3>
+        <div id="container-detalhes"></div>
+    </div>
+    
+    <button class="btn btn-save no-print" onclick="window.print()">IMPRIMIR / SALVAR PDF</button>
+    <button class="btn btn-report no-print" onclick="location.reload()">VOLTAR / NOVA INSPEÇÃO</button>
 </div>
-
-<div class="card">
-    <h3>2. Checklist de Inspeção</h3>
-    <div id="lista_itens"></div>
-</div>
-
-<div id="box_loading" class="loading-overlay">PROCESSANDO DADOS... POR FAVOR, AGUARDE.</div>
-
-<button class="btn btn-save" id="btn_salvar_area" onclick="executarSalvamento()">SALVAR ÁREA ATUAL</button>
-<button class="btn btn-pdf" onclick="iniciarGeracaoPDF()">GERAR PDF E WHATSAPP</button>
-
-<div id="status-msg">Nenhuma área registrada.</div>
 
 <script>
-    const nomesDosItens = ["Piso", "Escadas", "Corrimãos", "Portas", "Iluminação", "Equipamentos", "Maquinas", "Organização/Limpeza", "Condição Insegura"];
-    const memoriaLocal = [];
+    const itensNomes = ["Piso", "Escadas", "Corrimãos", "Portas", "Iluminação", "Equipamentos", "Maquinas", "Limpeza", "Condição Insegura"];
+    const db = [];
 
-    // Montagem dinâmica dos itens
-    const containerItens = document.getElementById('lista_itens');
-    nomesDosItens.forEach(item => {
-        containerItens.innerHTML += `
+    // Gerar Itens no App
+    const box = document.getElementById('itens-box');
+    itensNomes.forEach(item => {
+        box.innerHTML += `
             <div class="item-row">
-                <span style="${item==='Condição Insegura'?'color:#d93025;':''}">${item}</span>
-                <input type="checkbox" class="campo-check" data-item="${item}">
+                <span style="${item==='Condição Insegura'?'color:red;font-weight:bold':''}">${item}</span>
+                <input type="checkbox" class="c-check" data-n="${item}">
             </div>
-            <input type="file" accept="image/*" capture="camera" class="campo-foto" data-item="${item}" style="margin-bottom:8px; font-size:0.8em;">
-            <input type="text" class="campo-obs" data-item="${item}" placeholder="Observações para ${item}..." style="margin-bottom:15px;">
+            <input type="file" accept="image/*" capture="camera" class="c-foto" data-n="${item}">
+            <input type="text" class="c-obs" data-n="${item}" placeholder="Observação...">
         `;
     });
 
-    // Função de tratamento de imagem otimizada para navegadores mobile
-    const prepararImagem = (inputElement) => new Promise((resolve) => {
-        if (!inputElement.files || !inputElement.files[0]) return resolve(null);
-        const leitor = new FileReader();
-        leitor.readAsDataURL(inputElement.files[0]);
-        leitor.onload = (e) => {
-            const imgObj = new Image();
-            imgObj.src = e.target.result;
-            imgObj.onload = () => {
-                const canvasAux = document.createElement('canvas');
-                const LARGURA_MAX = 700; 
-                let w = imgObj.width;
-                let h = imgObj.height;
-                if (w > LARGURA_MAX) { h *= LARGURA_MAX / w; w = LARGURA_MAX; }
-                canvasAux.width = w; canvasAux.height = h;
-                canvasAux.getContext('2d').drawImage(imgObj, 0, 0, w, h);
-                resolve(canvasAux.toDataURL('image/jpeg', 0.6));
-            };
-        };
-        leitor.onerror = () => resolve(null);
-    });
+    async function salvarArea() {
+        const area = document.getElementById('area_num').value;
+        const resp = document.getElementById('resp_nome').value;
+        const aval = document.getElementById('aval_nome').value;
+        if(!area || !resp || !aval) return alert("Preencha todos os campos!");
 
-    async function executarSalvamento() {
-        const area = document.getElementById('input_area').value;
-        const resp = document.getElementById('input_resp').value;
-        const aval = document.getElementById('input_aval').value;
+        const dados = { area, resp, aval, data: new Date().toLocaleString(), nota: 100, detalhes: [] };
+        const checks = document.querySelectorAll('.c-check');
+        const fotos = document.querySelectorAll('.c-foto');
+        const obss = document.querySelectorAll('.c-obs');
 
-        if(!area || !resp || !aval) {
-            alert("⚠️ Atenção: Preencha Área, Responsável e Avaliador.");
-            return;
-        }
-
-        document.getElementById('box_loading').style.display = 'block';
-        document.getElementById('btn_salvar_area').disabled = true;
-
-        const dadosDaArea = { area, resp, aval, data: new Date().toLocaleString('pt-BR'), nota: 100, detalhes: [] };
-        
-        const checks = document.querySelectorAll('.campo-check');
-        const fotos = document.querySelectorAll('.campo-foto');
-        const observacoes = document.querySelectorAll('.campo-obs');
-
-        // Cálculo da Nota conforme regra
-        let houveInseguranca = false;
-        checks.forEach(c => { if(c.dataset.item === "Condição Insegura" && c.checked) houveInseguranca = true; });
-        
-        if(houveInseguranca) {
-            dadosDaArea.nota = 0;
+        if(document.querySelector('.c-check[data-n="Condição Insegura"]').checked) {
+            dados.nota = 0;
         } else {
-            checks.forEach(c => { if(c.dataset.item !== "Condição Insegura" && !c.checked) dadosDaArea.nota -= 10; });
+            checks.forEach(c => { if(c.dataset.n !== "Condição Insegura" && !c.checked) dados.nota -= 10; });
         }
 
-        // Processamento de cada item
-        for(let i=0; i < nomesDosItens.length; i++) {
-            const base64Foto = await prepararImagem(fotos[i]);
-            dadosDaArea.detalhes.push({
-                nome: nomesDosItens[i],
-                status: checks[i].checked ? "OK" : "PENDENTE",
-                obs: observacoes[i].value || "N/A",
-                imagem: base64Foto
-            });
-            // Limpar formulário
-            checks[i].checked = false;
-            observacoes[i].value = "";
-            fotos[i].value = "";
+        for(let i=0; i < itensNomes.length; i++) {
+            let fotoSrc = "";
+            if(fotos[i].files[0]) {
+                fotoSrc = await new Promise(r => {
+                    const rd = new FileReader();
+                    rd.onload = e => r(e.target.result);
+                    rd.readAsDataURL(fotos[i].files[0]);
+                });
+            }
+            dados.detalhes.push({ nome: itensNomes[i], ok: checks[i].checked, obs: obss[i].value, foto: fotoSrc });
+            // Limpar campos
+            checks[i].checked = false; obss[i].value = ""; fotos[i].value = "";
         }
 
-        memoriaLocal.push(dadosDaArea);
-        document.getElementById('input_area').value = "";
-        document.getElementById('box_loading').style.display = 'none';
-        document.getElementById('btn_salvar_area').disabled = false;
-        document.getElementById('status-msg').innerHTML = `✅ ÁREAS CONCLUÍDAS: ${memoriaLocal.length}`;
-        
-        alert(`Área ${area} arquivada com sucesso!`);
+        db.push(dados);
+        document.getElementById('status').innerText = `✅ Áreas Salvas: ${db.length}`;
+        alert("Área " + area + " salva!");
         window.scrollTo(0,0);
     }
 
-    function iniciarGeracaoPDF() {
-        if(memoriaLocal.length === 0) {
-            alert("⚠️ Erro: Salve ao menos uma área antes de gerar o relatório.");
-            return;
-        }
+    function gerarRelatorio() {
+        if(db.length === 0) return alert("Salve uma área!");
 
-        // TENTA ACESSAR A BIBLIOTECA DE 3 FORMAS DIFERENTES (COMPATIBILIDADE TOTAL)
-        let PDFControl;
-        try {
-            if (window.jspdf && window.jspdf.jsPDF) {
-                PDFControl = new window.jspdf.jsPDF();
-            } else if (typeof jsPDF !== 'undefined') {
-                PDFControl = new jsPDF();
-            } else {
-                throw new Error("Biblioteca não encontrada");
-            }
-        } catch (e) {
-            alert("❌ Erro de Conexão: A biblioteca PDF não carregou. Tente atualizar a página ou verificar sua internet.");
-            return;
-        }
+        // Esconde App e mostra Relatório
+        document.querySelector('.no-print').style.display = 'none';
+        document.getElementById('relatorio-final').style.display = 'block';
+        document.getElementById('print-data').innerText = new Date().toLocaleDateString();
 
-        try {
-            // Página de Ranking
-            PDFControl.setFontSize(20); PDFControl.setTextColor(200, 0, 0);
-            PDFControl.text("FAB. RAÇÕES BSB - JBS / SEARA", 105, 20, {align:"center"});
-            PDFControl.setFontSize(12); PDFControl.setTextColor(0);
-            PDFControl.text("RANKING GERAL DE PERFORMANCE:", 20, 40);
-            
-            const ordenados = [...memoriaLocal].sort((a,b) => b.nota - a.nota);
-            ordenados.forEach((item, index) => {
-                PDFControl.text(`${index+1}º Área ${item.area}: ${item.nota}% (Avaliador: ${item.aval})`, 25, 52 + (index*10));
+        // Gerar Ranking
+        const corpoRanking = document.getElementById('corpo-ranking');
+        corpoRanking.innerHTML = "";
+        const sorted = [...db].sort((a,b) => b.nota - a.nota);
+        sorted.forEach((s, i) => {
+            corpoRanking.innerHTML += `<tr><td>${i+1}º</td><td>Área ${s.area}</td><td>${s.nota}%</td><td>${s.aval}</td></tr>`;
+        });
+
+        // Gerar Detalhes
+        const contDetalhes = document.getElementById('container-detalhes');
+        contDetalhes.innerHTML = "";
+        db.forEach(d => {
+            let itensHtml = "";
+            d.detalhes.forEach(it => {
+                itensHtml += `
+                    <p><strong>${it.ok?'[OK]':'[  ]'} ${it.nome}:</strong> ${it.obs} 
+                    ${it.foto ? `<br><img src="${it.foto}" class="foto-print">` : ''}</p>
+                `;
             });
-
-            // Detalhamento
-            memoriaLocal.forEach(areaDoc => {
-                PDFControl.addPage();
-                PDFControl.setFontSize(18); PDFControl.text(`DETALHES: ÁREA ${areaDoc.area}`, 10, 20);
-                PDFControl.setFontSize(11); PDFControl.text(`Nota: ${areaDoc.nota}% | Responsável: ${areaDoc.resp} | Avaliador: ${areaDoc.aval}`, 10, 30);
-                PDFControl.line(10, 35, 200, 35);
-                
-                let posicaoY = 45;
-                areaDoc.detalhes.forEach(linha => {
-                    PDFControl.setFontSize(10);
-                    PDFControl.text(`${linha.status === 'OK' ? '[OK]' : '[  ]'} ${linha.nome}: ${linha.obs}`, 10, posicaoY);
-                    if(linha.imagem) {
-                        try { 
-                            PDFControl.addImage(linha.imagem, 'JPEG', 145, posicaoY - 5, 45, 30); 
-                            posicaoY += 25; 
-                        } catch(errImg){}
-                    }
-                    posicaoY += 12;
-                    if(posicaoY > 275) { PDFControl.addPage(); posicaoY = 20; }
-                });
-            });
-
-            // Salva com timestamp para evitar conflito de nome no Android
-            const nomeArquivo = `Auditoria_BSB_${new Date().getTime()}.pdf`;
-            PDFControl.save(nomeArquivo);
-            
-            alert("✅ Relatório gerado! Verifique a pasta de Downloads do seu celular e compartilhe no WhatsApp.");
-
-        } catch (erroGeral) {
-            alert("Erro ao processar PDF: " + erroGeral.message);
-        }
+            contDetalhes.innerHTML += `
+                <div class="area-block">
+                    <h4>ÁREA ${d.area} - Nota: ${d.nota}%</h4>
+                    <p>Responsável: ${d.resp} | Avaliador: ${d.aval} | Data: ${d.data}</p>
+                    ${itensHtml}
+                </div>
+            `;
+        });
+        
+        window.scrollTo(0,0);
     }
 </script>
 </body>
