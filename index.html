@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Fab. Rações BSB - Auditoria</title>
     <script src="https://cdnjs.cloudflare.com"></script>
-    <script src="https://cdn.jsdelivr.net"></script>
     <style>
         body { font-family: -apple-system, sans-serif; padding: 15px; background: #f4f7f9; color: #333; margin: 0; }
         .header-logos { display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 12px; margin-bottom: 15px; border-top: 6px solid #cc0000; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -16,12 +15,10 @@
         .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         input[type="checkbox"] { width: 32px; height: 32px; accent-color: #28a745; }
         input[type="text"], select { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; background: #fff; -webkit-appearance: none; }
-        #signature-wrapper { position: relative; width: 100%; height: 200px; border: 2px dashed #bbb; border-radius: 10px; background: #fff; touch-action: none; margin-top:10px; }
-        #signature-pad { width: 100%; height: 100%; border-radius: 10px; }
         .btn-acao { width: 100%; padding: 20px; margin: 10px 0; border: none; border-radius: 12px; font-weight: 700; font-size: 16px; color: white; }
         .save-btn { background: #004a99; }
         .final-btn { background: #28a745; }
-        #loading { display:none; color: #004a99; font-weight: bold; text-align: center; margin: 10px 0; }
+        #status-ranking { font-weight: bold; color: #004a99; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -34,166 +31,168 @@
 
 <div class="card">
     <h3>1. Identificação</h3>
-    <select id="area">
-        <option value="" disabled selected>Selecione a Área (1 a 36)</option>
+    <label>Selecione a Área (1 a 36):</label>
+    <select id="area" style="margin-bottom:10px;">
+        <option value="" disabled selected>Escolha a Área...</option>
         <script>for(let i=1;i<=36;i++) document.write(`<option value="${i}">Área ${i}</option>`);</script>
     </select>
-    <input type="text" id="responsavel_area" placeholder="Responsável da Área" style="margin-top:10px;">
-</div>
-
-<div class="card" id="checklist">
-    <h3>2. Itens</h3>
-    <script>
-        const itensConfig = ["Piso", "Escadas", "Corrimãos", "Portas", "Iluminação", "Equipamentos", "Maquinas", "Organização/Limpeza", "Condição Insegura"];
-        itensConfig.forEach(item => {
-            document.write(`
-                <div class="item-aval">
-                    <div class="row">
-                        <span style="${item === 'Condição Insegura' ? 'color:red; font-weight:bold;' : ''}">${item}</span>
-                        <input type="checkbox" id="check-${item}">
-                    </div>
-                    <input type="file" accept="image/*" capture="camera" id="img-${item}">
-                    <input type="text" id="obs-${item}" placeholder="Observações...">
-                </div>
-            `);
-        });
-    </script>
+    <input type="text" id="responsavel_area" placeholder="Responsável da Área" style="margin-bottom:10px;">
+    <input type="text" id="avaliador_nome" placeholder="Nome do Avaliador">
 </div>
 
 <div class="card">
-    <h3>3. Assinatura</h3>
-    <div id="signature-wrapper"><canvas id="signature-pad"></canvas></div>
-    <button onclick="signaturePad.clear()" style="width:100%; background:none; border:none; color:blue; margin-top:10px; text-decoration:underline;">Limpar Assinatura</button>
+    <h3>2. Itens de Inspeção</h3>
+    <div id="checklist-container">
+        <!-- Itens via JS para manter o HTML leve -->
+    </div>
 </div>
 
-<div id="loading">PROCESSANDO DADOS... AGUARDE</div>
-<button class="btn-acao save-btn" id="btnSalvar" onclick="salvarAvaliacao()">SALVAR ÁREA ATUAL</button>
-<button class="btn-acao final-btn" onclick="gerarRelatorioFinal()">GERAR PDF E WHATSAPP</button>
+<button class="btn-acao save-btn" onclick="salvarArea()">SALVAR ÁREA ATUAL</button>
+<button class="btn-acao final-btn" onclick="gerarPDF()">GERAR RELATÓRIO FINAL</button>
 
 <div class="card" style="text-align:center;">
-    <div id="status-ranking">Nenhuma área salva.</div>
-    <button onclick="location.reload()" style="margin-top:15px; background:none; border:none; color:gray; text-decoration:underline;">Reiniciar App</button>
+    <div id="status-ranking">Nenhuma área salva ainda.</div>
+    <button onclick="location.reload()" style="background:none; border:none; color:gray; text-decoration:underline; margin-top:15px;">Limpar Tudo</button>
 </div>
 
 <script>
-    let signaturePad;
-    const avaliacoesSalvas = [];
+    const itensConfig = ["Piso", "Escadas", "Corrimãos", "Portas", "Iluminação", "Equipamentos", "Maquinas", "Organização/Limpeza", "Condição Insegura"];
+    const bancoDeDados = [];
 
-    window.onload = function() {
-        const canvas = document.getElementById('signature-pad');
-        const ratio = Math.max(window.devicePixelRatio || 1, 1);
-        canvas.width = canvas.offsetWidth * ratio;
-        canvas.height = canvas.offsetHeight * ratio;
-        canvas.getContext("2d").scale(ratio, ratio);
-        signaturePad = new SignaturePad(canvas, { backgroundColor: 'rgb(255, 255, 255)' });
-    };
-
-    const toBase64 = file => new Promise((resolve) => {
-        if(!file || !file[0]) return resolve(null);
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => resolve(null);
-        reader.readAsDataURL(file[0]);
+    // Renderizar Itens
+    const container = document.getElementById('checklist-container');
+    itensConfig.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'item-aval';
+        div.innerHTML = `
+            <div class="row">
+                <span style="${item === 'Condição Insegura' ? 'color:red; font-weight:bold;' : 'font-weight:600;'}">${item}</span>
+                <input type="checkbox" class="check-item" data-name="${item}">
+            </div>
+            <input type="file" accept="image/*" capture="camera" class="foto-item" data-name="${item}" style="margin:10px 0;">
+            <input type="text" class="obs-item" data-name="${item}" placeholder="Observações...">
+        `;
+        container.appendChild(div);
     });
 
-    async function salvarAvaliacao() {
+    // Função para converter imagem de forma síncrona/prometida
+    function processarFoto(input) {
+        return new Promise((resolve) => {
+            if (!input.files || !input.files[0]) return resolve(null);
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(input.files[0]);
+        });
+    }
+
+    async function salvarArea() {
         const areaId = document.getElementById('area').value;
         const resp = document.getElementById('responsavel_area').value;
-        
-        if(!areaId || !resp) return alert("Preencha Área e Responsável!");
+        const aval = document.getElementById('avaliador_nome').value;
 
-        document.getElementById('loading').style.display = 'block';
-        document.getElementById('btnSalvar').disabled = true;
+        if (!areaId || !resp || !aval) {
+            alert("⚠️ Preencha Área, Responsável e Avaliador!");
+            return;
+        }
 
-        const dados = {
-            nome: "Área " + areaId,
+        // Criar objeto da área
+        const dadosArea = {
+            id: areaId,
             responsavel: resp,
+            avaliador: aval,
             data: new Date().toLocaleString('pt-BR'),
-            nota: 100,
             itens: [],
-            assinatura: signaturePad.isEmpty() ? null : signaturePad.toDataURL()
+            nota: 100
         };
 
-        // Lógica de Nota
-        if(document.getElementById('check-Condição Insegura').checked) {
-            dados.nota = 0;
+        const checks = document.querySelectorAll('.check-item');
+        const fotos = document.querySelectorAll('.foto-item');
+        const obss = document.querySelectorAll('.obs-item');
+
+        // Cálculo da Nota
+        let condInsegura = false;
+        checks.forEach(c => {
+            if (c.dataset.name === "Condição Insegura" && c.checked) condInsegura = true;
+        });
+
+        if (condInsegura) {
+            dadosArea.nota = 0;
         } else {
-            itensConfig.slice(0, -1).forEach(it => {
-                if(!document.getElementById(`check-${it}`).checked) dados.nota -= 10;
+            checks.forEach(c => {
+                if (c.dataset.name !== "Condição Insegura" && !c.checked) dadosArea.nota -= 10;
             });
         }
 
-        // Processar Itens
-        for(let it of itensConfig) {
-            const inputFoto = document.getElementById(`img-${it}`);
-            const fotoBase64 = await toBase64(inputFoto.files);
-            
-            dados.itens.push({
-                nome: it,
-                ok: document.getElementById(`check-${it}`).checked,
-                obs: document.getElementById(`obs-${it}`).value || "",
+        // Coletar Dados dos Itens (Fotos são processadas aqui)
+        for (let i = 0; i < itensConfig.length; i++) {
+            const fotoBase64 = await processarFoto(fotos[i]);
+            dadosArea.itens.push({
+                nome: itensConfig[i],
+                ok: checks[i].checked,
+                obs: obss[i].value || "",
                 foto: fotoBase64
             });
-
-            // Resetar campos para a próxima área
-            document.getElementById(`check-${it}`).checked = false;
-            document.getElementById(`obs-${it}`).value = "";
-            inputFoto.value = "";
+            
+            // Limpar para o próximo
+            checks[i].checked = false;
+            obss[i].value = "";
+            fotos[i].value = "";
         }
 
-        avaliacoesSalvas.push(dados);
+        bancoDeDados.push(dadosArea);
         
-        // Resetar Identificação e Assinatura
+        // Reset campos topo
         document.getElementById('area').value = "";
-        document.getElementById('responsavel_area').value = "";
-        signaturePad.clear();
+        document.getElementById('status-ranking').innerHTML = `✅ Áreas Salvas: ${bancoDeDados.length}`;
         
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('btnSalvar').disabled = false;
-        document.getElementById('status-ranking').innerHTML = `<b>Áreas Salvas: ${avaliacoesSalvas.length}</b>`;
-        
-        alert("✅ Área " + areaId + " salva com sucesso!");
+        alert(`Área ${areaId} salva com sucesso!`);
         window.scrollTo(0,0);
     }
 
-    async function gerarRelatorioFinal() {
-        if(avaliacoesSalvas.length === 0) return alert("Salve ao menos uma área primeiro!");
-        
+    function gerarPDF() {
+        if (bancoDeDados.length === 0) {
+            alert("❌ Erro: Salve pelo menos uma área antes de gerar o PDF!");
+            return;
+        }
+
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
         // Ranking
         doc.setFontSize(18); doc.setTextColor(200, 0, 0);
-        doc.text("FAB. RAÇÕES BSB - JBS/SEARA", 105, 20, {align:"center"});
+        doc.text("FAB. RAÇÕES BSB - RANKING FINAL", 105, 20, {align:"center"});
         
-        const sorted = [...avaliacoesSalvas].sort((a,b) => b.nota - a.nota);
+        const sorted = [...bancoDeDados].sort((a,b) => b.nota - a.nota);
         doc.setFontSize(12); doc.setTextColor(0);
-        doc.text("RANKING DE PERFORMANCE:", 10, 40);
-        sorted.forEach((a, i) => doc.text(`${i+1}. ${a.nome}: ${a.nota}%`, 15, 50+(i*8)));
+        sorted.forEach((a, i) => {
+            doc.text(`${i+1}. Área ${a.id}: ${a.nota}% (Avaliador: ${a.avaliador})`, 20, 40 + (i*8));
+        });
 
         // Detalhes
-        for(let av of avaliacoesSalvas) {
+        bancoDeDados.forEach(area => {
             doc.addPage();
-            doc.setFontSize(16); doc.text(`${av.nome} (${av.nota}%)`, 10, 20);
-            doc.setFontSize(10); doc.text(`Resp: ${av.responsavel} | ${av.data}`, 10, 28);
+            doc.setFontSize(16); doc.text(`Área ${area.id} - Nota: ${area.nota}%`, 10, 20);
+            doc.setFontSize(10); doc.text(`Avaliador: ${area.avaliador} | Responsável: ${area.responsavel}`, 10, 28);
             
             let y = 40;
-            for(let it of av.itens) {
-                doc.text(`${it.ok?'[OK]':'[ ]'} ${it.nome}: ${it.obs}`, 10, y);
-                if(it.foto) { try { doc.addImage(it.foto, 'JPEG', 150, y-5, 40, 25); y+=20; } catch(e){} }
+            area.itens.forEach(it => {
+                doc.text(`${it.ok?'[OK]':'[  ]'} ${it.nome}: ${it.obs}`, 10, y);
+                if (it.foto) {
+                    try { doc.addImage(it.foto, 'JPEG', 150, y-5, 40, 25); y += 20; } catch(e) {}
+                }
                 y += 10;
-                if(y > 270) { doc.addPage(); y = 20; }
-            }
-            if(av.assinatura) doc.addImage(av.assinatura, 'PNG', 10, 250, 40, 20);
-        }
+                if (y > 270) { doc.addPage(); y = 20; }
+            });
+        });
 
         const pdfBlob = doc.output('blob');
-        const file = new File([pdfBlob], 'Relatorio_Racoes.pdf', { type: 'application/pdf' });
+        const file = new File([pdfBlob], 'Relatorio_BSB.pdf', { type: 'application/pdf' });
         
         if (navigator.share) {
-            await navigator.share({ files: [file], title: 'Checklist Rações BSB' });
+            navigator.share({ files: [file], title: 'Relatório BSB' }).catch(() => doc.save('Relatorio_BSB.pdf'));
         } else {
-            doc.save('Relatorio_Racoes_BSB.pdf');
+            doc.save('Relatorio_BSB.pdf');
         }
     }
 </script>
