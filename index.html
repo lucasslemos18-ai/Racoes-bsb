@@ -20,13 +20,10 @@
         .btn-save { background: #004a99; }
         .btn-report { background: #28a745; }
         .btn-wa { background: #25D366; }
-        
-        /* Estilo do Relatório Visual */
         #relatorio-view { display: none; background: white; padding: 15px; }
         .area-box { border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin-bottom: 15px; }
         .foto-grid { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
         .foto-resumo { width: 100px; height: 100px; object-fit: cover; border: 1px solid #ccc; }
-
         @media print { .no-print { display: none !important; } #relatorio-view { display: block !important; } }
     </style>
 </head>
@@ -42,8 +39,8 @@
     <div class="card">
         <h3>Identificação</h3>
         <select id="area_sel"><option value="">Selecione a Área (1-36)</option><script>for(let i=1;i<=36;i++)document.write(`<option value="${i}">Área ${i}</option>`)</script></select>
-        <input type="text" id="resp" placeholder="Responsável">
-        <input type="text" id="aval" placeholder="Avaliador">
+        <input type="text" id="resp" placeholder="Responsável da Área">
+        <input type="text" id="aval" placeholder="Nome do Avaliador">
     </div>
 
     <div id="checklist-container"></div>
@@ -56,14 +53,14 @@
 <div id="relatorio-view">
     <h2 style="text-align:center; color:red; border-bottom:2px solid red;">AUDITORIA RAÇÕES BSB</h2>
     <div id="corpo-rel"></div>
-    
-    <button class="btn btn-wa no-print" onclick="compartilharTextoWA()">COMPARTILHAR RESUMO NO WHATSAPP</button>
-    <button class="btn btn-save no-print" onclick="window.print()">SALVAR PDF COMPLETO (COM FOTOS)</button>
+    <button class="btn btn-wa no-print" onclick="compartilharTextoWA()">COMPARTILHAR NO WHATSAPP</button>
+    <button class="btn btn-save no-print" onclick="window.print()">SALVAR PDF (COM FOTOS)</button>
     <button class="btn no-print" style="background:#888;" onclick="location.reload()">VOLTAR</button>
 </div>
 
 <script>
-    const itens = ["Piso", "Escadas", "Corrimãos", "Portas", "Iluminação", "Equipamentos", "Maquinas", "Limpeza", "Condição Insegura"];
+    // Tópicos atualizados conforme sua solicitação
+    const itens = ["Estruturas", "Elétrica", "Equipamentos", "Maquinas", "Limpeza", "Condição Insegura"];
     const db = [];
     const fotosTemp = {};
 
@@ -96,16 +93,19 @@
 
     function salvarArea() {
         const area = document.getElementById('area_sel').value;
-        if(!area) return alert("Selecione a área!");
+        const resp = document.getElementById('resp').value;
+        const aval = document.getElementById('aval').value;
+        if(!area || !resp) return alert("Selecione a área e o responsável!");
         
-        const dados = { area, aval: document.getElementById('aval').value, nota: 100, detalhes: [] };
+        const dados = { area, resp, aval, nota: 100, detalhes: [] };
         const checks = document.querySelectorAll('.c-check');
         const obss = document.querySelectorAll('.c-obs');
 
         if(document.querySelector('.c-check[data-n="Condição Insegura"]').checked) {
             dados.nota = 0;
         } else {
-            checks.forEach(c => { if(c.dataset.n !== "Condição Insegura" && !c.checked) dados.nota -= 11; });
+            // Nota agora dividida pelos 5 itens (Estruturas, Elétrica, Equipamentos, Máquinas, Limpeza)
+            checks.forEach(c => { if(c.dataset.n !== "Condição Insegura" && !c.checked) dados.nota -= 20; });
         }
         dados.nota = Math.max(0, Math.round(dados.nota));
 
@@ -117,7 +117,7 @@
 
         db.push(dados);
         document.getElementById('contador').innerText = `Áreas Salvas: ${db.length}`;
-        alert("Área salva com sucesso!");
+        alert("Área " + area + " salva!");
         window.scrollTo(0,0);
     }
 
@@ -127,14 +127,14 @@
         document.getElementById('relatorio-view').style.display = 'block';
 
         const cont = document.getElementById('corpo-rel');
-        cont.innerHTML = "<h3>Ranking:</h3>";
+        cont.innerHTML = "<h3>Ranking Geral:</h3>";
         db.sort((a,b) => b.nota - a.nota).forEach(d => {
-            cont.innerHTML += `<p>• Área ${d.area}: ${d.nota}% (Aval: ${d.aval})</p>`;
+            cont.innerHTML += `<p>• Área ${d.area}: <b>${d.nota}%</b> (Resp: ${d.resp})</p>`;
         });
 
-        cont.innerHTML += "<hr><h3>Detalhes:</h3>";
+        cont.innerHTML += "<hr><h3>Evidências por Área:</h3>";
         db.forEach(d => {
-            let html = `<div class="area-box"><b>ÁREA ${d.area}</b><br>`;
+            let html = `<div class="area-box"><b>ÁREA ${d.area} - NOTA: ${d.nota}%</b><br>`;
             d.detalhes.forEach(it => {
                 html += `<p style="font-size:12px;">${it.ok?'✅':'❌'} ${it.nome}: ${it.obs}</p>`;
                 if(it.fotos.length > 0) {
@@ -148,7 +148,7 @@
     function compartilharTextoWA() {
         let texto = "*AUDITORIA FAB. RAÇÕES BSB*\n\n*Ranking de Performance:*\n";
         db.sort((a,b) => b.nota - a.nota).forEach(d => {
-            texto += `• Área ${d.area}: ${d.nota}% (Aval: ${d.aval})\n`;
+            texto += `• Área ${d.area}: *${d.nota}%* (Resp: ${d.resp})\n`;
         });
         const url = "https://wa.me" + encodeURIComponent(texto);
         window.open(url, '_blank');
