@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fab. Rações BSB - Auditoria Multi-Fotos</title>
+    <title>Fab. Rações BSB - Multi-Fotos</title>
     <style>
         body { font-family: -apple-system, sans-serif; padding: 15px; background: #f0f2f5; color: #333; margin: 0; }
-        .no-print { display: block; }
         .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px; border-radius: 10px; border-top: 5px solid #cc0000; margin-bottom: 15px; }
         .header img { height: 30px; }
         .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -14,26 +13,22 @@
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
         input[type="checkbox"] { width: 30px; height: 30px; }
+        
+        /* Estilo para Acumulador de Fotos */
+        .foto-btn { background: #6c757d; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; margin: 5px 0; width: 100%; }
+        .preview-container { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+        .thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; }
+        
         .btn { width: 100%; padding: 18px; border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 16px; margin: 10px 0; cursor: pointer; }
         .btn-save { background: #004a99; }
         .btn-report { background: #28a745; }
         
-        /* Relatório Visual */
         #relatorio-final { display: none; background: white; padding: 20px; }
-        .print-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
-        .area-block { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; page-break-inside: avoid; }
-        .ranking-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-        .ranking-table th, .ranking-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        
-        /* Container de fotos no relatório */
-        .fotos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 10px; }
-        .foto-print { width: 100%; height: 120px; border: 1px solid #ccc; border-radius: 5px; object-fit: cover; }
-        
-        @media print {
-            .no-print { display: none !important; }
-            #relatorio-final { display: block !important; }
-            body { background: white; padding: 0; }
-        }
+        .area-block { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; }
+        .fotos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 10px; }
+        .foto-print { width: 100%; height: 100px; border: 1px solid #ccc; object-fit: cover; }
+
+        @media print { .no-print { display: none !important; } #relatorio-final { display: block !important; } }
     </style>
 </head>
 <body>
@@ -41,72 +36,78 @@
 <div class="no-print">
     <div class="header">
         <img src="https://upload.wikimedia.org">
-        <div style="font-weight: bold; font-size: 0.8em; text-align: center;">FAB. RAÇÕES BSB</div>
+        <div style="font-weight: bold;">FAB. RAÇÕES BSB</div>
         <img src="https://upload.wikimedia.org">
     </div>
 
     <div class="card">
         <h3>1. Identificação</h3>
         <select id="area_num">
-            <option value="" disabled selected>Escolha a Área (1 a 36)</option>
+            <option value="" disabled selected>Área (1 a 36)</option>
             <script>for(let i=1;i<=36;i++) document.write(`<option value="${i}">Área ${i}</option>`);</script>
         </select>
-        <input type="text" id="resp_nome" placeholder="Responsável da Área">
-        <input type="text" id="aval_nome" placeholder="Nome do Avaliador">
+        <input type="text" id="resp_nome" placeholder="Responsável">
+        <input type="text" id="aval_nome" placeholder="Avaliador">
     </div>
 
-    <div class="card">
-        <h3>2. Checklist (Selecione várias fotos)</h3>
-        <div id="itens-box"></div>
+    <div class="card" id="itens-box">
+        <h3>2. Checklist</h3>
+        <!-- JS vai gerar aqui -->
     </div>
 
-    <button class="btn btn-save" onclick="salvarArea()">SALVAR ÁREA ATUAL</button>
-    <button class="btn btn-report" onclick="gerarRelatorio()">VISUALIZAR RELATÓRIO FINAL</button>
-    <p id="status" style="text-align:center; font-weight:bold; color:#004a99;">Aguardando início...</p>
+    <button class="btn btn-save" onclick="salvarArea()">SALVAR ÁREA</button>
+    <button class="btn btn-report" onclick="gerarRelatorio()">GERAR RELATÓRIO</button>
+    <p id="status" style="text-align:center; font-weight:bold; color:#004a99;">Aguardando...</p>
 </div>
 
 <div id="relatorio-final">
-    <div class="print-header">
-        <h2>FAB. RAÇÕES BSB - JBS/SEARA</h2>
-        <p>Relatório de Auditoria Semanal - Data: <span id="print-data"></span></p>
-    </div>
-    <div id="ranking-section">
-        <table class="ranking-table">
-            <thead><tr><th>Posição</th><th>Área</th><th>Nota</th><th>Avaliador</th></tr></thead>
-            <tbody id="corpo-ranking"></tbody>
-        </table>
-    </div>
+    <h2 style="text-align:center;">FAB. RAÇÕES BSB - RELATÓRIO</h2>
     <div id="container-detalhes"></div>
-    <button class="btn btn-save no-print" onclick="window.print()">IMPRIMIR / SALVAR PDF</button>
-    <button class="btn btn-report no-print" onclick="location.reload()">NOVA INSPEÇÃO</button>
+    <button class="btn btn-save no-print" onclick="window.print()">SALVAR PDF / WHATSAPP</button>
+    <button class="btn no-print" style="background:#888;" onclick="location.reload()">NOVA INSPEÇÃO</button>
 </div>
 
 <script>
     const itensNomes = ["Piso", "Escadas", "Corrimãos", "Portas", "Iluminação", "Equipamentos", "Maquinas", "Limpeza", "Condição Insegura"];
     const db = [];
+    const fotosTemporarias = {}; // Objeto para guardar fotos de cada item antes de salvar
 
     const box = document.getElementById('itens-box');
     itensNomes.forEach(item => {
+        fotosTemporarias[item] = [];
         box.innerHTML += `
             <div class="item-row">
                 <span style="${item==='Condição Insegura'?'color:red;font-weight:bold':''}">${item}</span>
                 <input type="checkbox" class="c-check" data-n="${item}">
             </div>
-            <!-- REMOVIDO CAPTURE PARA LIBERAR MÚLTIPLAS FOTOS DA GALERIA/CÂMERA -->
-            <input type="file" accept="image/*" class="c-foto" data-n="${item}" multiple>
+            <button class="foto-btn" onclick="document.getElementById('input-${item}').click()">＋ ADICIONAR FOTO</button>
+            <input type="file" id="input-${item}" accept="image/*" capture="camera" style="display:none" onchange="adicionarFoto('${item}', this)">
+            <div id="preview-${item}" class="preview-container"></div>
             <input type="text" class="c-obs" data-n="${item}" placeholder="Observação...">
         `;
     });
+
+    async function adicionarFoto(item, input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                fotosTemporarias[item].push(e.target.result);
+                const container = document.getElementById(`preview-${item}`);
+                container.innerHTML += `<img src="${e.target.result}" class="thumb">`;
+            };
+            reader.readAsDataURL(input.files[0]);
+            input.value = ""; // Limpa o input para permitir tirar outra foto em seguida
+        }
+    }
 
     async function salvarArea() {
         const area = document.getElementById('area_num').value;
         const resp = document.getElementById('resp_nome').value;
         const aval = document.getElementById('aval_nome').value;
-        if(!area || !resp || !aval) return alert("Preencha todos os campos!");
+        if(!area || !resp || !aval) return alert("Preencha tudo!");
 
         const dados = { area, resp, aval, data: new Date().toLocaleString(), nota: 100, detalhes: [] };
         const checks = document.querySelectorAll('.c-check');
-        const camposFotos = document.querySelectorAll('.c-foto');
         const obss = document.querySelectorAll('.c-obs');
 
         if(document.querySelector('.c-check[data-n="Condição Insegura"]').checked) {
@@ -116,60 +117,46 @@
         }
         dados.nota = Math.max(0, Math.round(dados.nota));
 
-        for(let i=0; i < itensNomes.length; i++) {
-            let listaFotos = [];
-            const arquivos = camposFotos[i].files;
-            
-            if(arquivos.length > 0) {
-                for(let file of arquivos) {
-                    const b64 = await new Promise(r => {
-                        const rd = new FileReader();
-                        rd.onload = e => r(e.target.result);
-                        rd.readAsDataURL(file);
-                    });
-                    listaFotos.push(b64);
-                }
-            }
-            dados.detalhes.push({ nome: itensNomes[i], ok: checks[i].checked, obs: obss[i].value, fotos: listaFotos });
-            checks[i].checked = false; obss[i].value = ""; camposFotos[i].value = "";
-        }
+        itensNomes.forEach((item, i) => {
+            dados.detalhes.push({
+                nome: item,
+                ok: checks[i].checked,
+                obs: obss[i].value,
+                fotos: [...fotosTemporarias[item]] // Copia as fotos acumuladas
+            });
+            // Limpa para a próxima área
+            checks[i].checked = false;
+            obss[i].value = "";
+            fotosTemporarias[item] = [];
+            document.getElementById(`preview-${item}`).innerHTML = "";
+        });
 
         db.push(dados);
         document.getElementById('status').innerText = `✅ Áreas Salvas: ${db.length}`;
-        alert("Área " + area + " salva!");
+        alert("Área salva!");
         window.scrollTo(0,0);
     }
 
     function gerarRelatorio() {
-        if(db.length === 0) return alert("Salve uma área primeiro!");
+        if(db.length === 0) return alert("Salve uma área!");
         document.querySelector('.no-print').style.display = 'none';
         document.getElementById('relatorio-final').style.display = 'block';
-        document.getElementById('print-data').innerText = new Date().toLocaleDateString();
 
-        const corpoRanking = document.getElementById('corpo-ranking');
-        corpoRanking.innerHTML = "";
-        const sorted = [...db].sort((a,b) => b.nota - a.nota);
-        sorted.forEach((s, i) => {
-            corpoRanking.innerHTML += `<tr><td>${i+1}º</td><td>Área ${s.area}</td><td>${s.nota}%</td><td>${s.aval}</td></tr>`;
-        });
-
-        const contDetalhes = document.getElementById('container-detalhes');
-        contDetalhes.innerHTML = "";
+        const cont = document.getElementById('container-detalhes');
+        cont.innerHTML = "";
         db.forEach(d => {
             let itensHtml = "";
             d.detalhes.forEach(it => {
                 let fotosHtml = it.fotos.map(f => `<img src="${f}" class="foto-print">`).join('');
                 itensHtml += `
-                    <div style="margin-bottom: 15px; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px;">
+                    <div style="margin-bottom:10px; border-bottom:1px solid #eee;">
                         <p><strong>${it.ok?'[OK]':'[  ]'} ${it.nome}:</strong> ${it.obs}</p>
                         <div class="fotos-grid">${fotosHtml}</div>
                     </div>
                 `;
             });
-            contDetalhes.innerHTML += `<div class="area-block"><h4>ÁREA ${d.area} - Nota: ${d.nota}%</h4>${itensHtml}</div>`;
+            cont.innerHTML += `<div class="area-block"><h4>ÁREA ${d.area} - Nota: ${d.nota}%</h4>${itensHtml}</div>`;
         });
-        window.scrollTo(0,0);
     }
 </script>
 </body>
-</html>
