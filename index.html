@@ -3,56 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fab. Rações BSB</title>
-    <script src="https://cdnjs.cloudflare.com"></script>
+    <title>Fab. Rações BSB - Auditoria</title>
     <style>
         body { font-family: -apple-system, sans-serif; padding: 15px; background: #f0f2f5; color: #333; margin: 0; }
+        .no-print { display: block; }
         .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px; border-radius: 10px; border-top: 5px solid #cc0000; margin-bottom: 15px; }
         .header img { height: 30px; }
         .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h3 { color: #cc0000; margin: 0; font-size: 1.1em; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        h3 { color: #cc0000; margin: 0 0 10px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
         .btn-foto { background: #6c757d; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; margin: 5px 0; }
         .preview { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
         .thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 5px; border: 1px solid #ddd; }
-        .btn { width: 100%; padding: 18px; border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 16px; margin: 10px 0; }
+        .btn { width: 100%; padding: 18px; border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 16px; margin: 10px 0; cursor: pointer; }
         .btn-save { background: #004a99; }
         .btn-report { background: #28a745; }
-        .btn-share { background: #25D366; display: none; }
-        #relatorio-hidden { display: none; background: white; padding: 20px; width: 500px; }
-        #img-final { width: 100%; border-radius: 10px; display: none; margin-top: 15px; border: 3px solid #25D366; }
+        .btn-wa { background: #25D366; }
+        
+        /* Estilo do Relatório Visual */
+        #relatorio-view { display: none; background: white; padding: 15px; }
+        .area-box { border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin-bottom: 15px; }
+        .foto-grid { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+        .foto-resumo { width: 100px; height: 100px; object-fit: cover; border: 1px solid #ccc; }
+
+        @media print { .no-print { display: none !important; } #relatorio-view { display: block !important; } }
     </style>
 </head>
 <body>
 
-<div id="ui">
+<div id="main-ui" class="no-print">
     <div class="header">
         <img src="https://upload.wikimedia.org">
-        <div style="font-weight: 900; font-size: 0.8em;">FAB. RAÇÕES BSB</div>
+        <div style="font-weight: bold; font-size: 0.8em; text-align: center;">FAB. RAÇÕES BSB</div>
         <img src="https://upload.wikimedia.org">
     </div>
 
     <div class="card">
         <h3>Identificação</h3>
-        <select id="area"><option value="">Selecione a Área (1-36)</option><script>for(let i=1;i<=36;i++)document.write(`<option value="${i}">Área ${i}</option>`)</script></select>
+        <select id="area_sel"><option value="">Selecione a Área (1-36)</option><script>for(let i=1;i<=36;i++)document.write(`<option value="${i}">Área ${i}</option>`)</script></select>
         <input type="text" id="resp" placeholder="Responsável">
         <input type="text" id="aval" placeholder="Avaliador">
     </div>
 
-    <div id="checklist-box"></div>
+    <div id="checklist-container"></div>
 
-    <button class="btn btn-save" id="save-btn" onclick="salvarArea()">SALVAR ÁREA</button>
-    <button class="btn btn-report" id="report-btn" onclick="gerarRelatorio()">GERAR PARA WHATSAPP</button>
-    <button class="btn btn-share" id="share-btn" onclick="enviar()">ENVIAR NO WHATSAPP</button>
-    <img id="img-final">
-    <p id="info" style="text-align:center; font-weight:bold;"></p>
+    <button class="btn btn-save" onclick="salvarArea()">SALVAR ÁREA</button>
+    <button class="btn btn-report" onclick="mostrarRelatorio()">VISUALIZAR RELATÓRIO</button>
+    <p id="contador" style="text-align:center; font-weight:bold; color:#004a99;"></p>
 </div>
 
-<!-- Relatório que vira imagem -->
-<div id="relatorio-hidden">
-    <h2 style="color:red; text-align:center; border-bottom:2px solid red;">AUDITORIA RAÇÕES BSB</h2>
-    <div id="conteudo-rel"></div>
+<div id="relatorio-view">
+    <h2 style="text-align:center; color:red; border-bottom:2px solid red;">AUDITORIA RAÇÕES BSB</h2>
+    <div id="corpo-rel"></div>
+    
+    <button class="btn btn-wa no-print" onclick="compartilharTextoWA()">COMPARTILHAR RESUMO NO WHATSAPP</button>
+    <button class="btn btn-save no-print" onclick="window.print()">SALVAR PDF COMPLETO (COM FOTOS)</button>
+    <button class="btn no-print" style="background:#888;" onclick="location.reload()">VOLTAR</button>
 </div>
 
 <script>
@@ -60,10 +67,10 @@
     const db = [];
     const fotosTemp = {};
 
-    const box = document.getElementById('checklist-box');
+    const container = document.getElementById('checklist-container');
     itens.forEach(it => {
         fotosTemp[it] = [];
-        box.innerHTML += `
+        container.innerHTML += `
             <div class="card">
                 <div class="item-row">
                     <span style="${it==='Condição Insegura'?'color:red;font-weight:bold':''}">${it}</span>
@@ -83,20 +90,24 @@
             fotosTemp[it].push(e.target.result);
             document.getElementById(`pre-${it}`).innerHTML += `<img src="${e.target.result}" class="thumb">`;
         };
-        reader.readAsDataURL(input.files[0]);
+        reader.readAsDataURL(input.files);
         input.value = "";
     }
 
     function salvarArea() {
-        const area = document.getElementById('area').value;
+        const area = document.getElementById('area_sel').value;
         if(!area) return alert("Selecione a área!");
         
-        const dados = { area, nota: 100, detalhes: [] };
+        const dados = { area, aval: document.getElementById('aval').value, nota: 100, detalhes: [] };
         const checks = document.querySelectorAll('.c-check');
         const obss = document.querySelectorAll('.c-obs');
 
-        if(document.querySelector('.c-check[data-n="Condição Insegura"]').checked) dados.nota = 0;
-        else checks.forEach(c => { if(c.dataset.n !== "Condição Insegura" && !c.checked) dados.nota -= 11; });
+        if(document.querySelector('.c-check[data-n="Condição Insegura"]').checked) {
+            dados.nota = 0;
+        } else {
+            checks.forEach(c => { if(c.dataset.n !== "Condição Insegura" && !c.checked) dados.nota -= 11; });
+        }
+        dados.nota = Math.max(0, Math.round(dados.nota));
 
         itens.forEach((it, i) => {
             dados.detalhes.push({ nome: it, ok: checks[i].checked, obs: obss[i].value, fotos: [...fotosTemp[it]] });
@@ -105,42 +116,42 @@
         });
 
         db.push(dados);
-        document.getElementById('info').innerText = `Áreas Salvas: ${db.length}`;
-        alert("Área salva!");
+        document.getElementById('contador').innerText = `Áreas Salvas: ${db.length}`;
+        alert("Área salva com sucesso!");
+        window.scrollTo(0,0);
     }
 
-    function gerarRelatorio() {
-        if(db.length === 0) return alert("Salve uma área!");
-        const rel = document.getElementById('relatorio-hidden');
-        const cont = document.getElementById('conteudo-rel');
-        rel.style.display = "block";
-        cont.innerHTML = "";
+    function mostrarRelatorio() {
+        if(db.length === 0) return alert("Salve uma área primeiro!");
+        document.getElementById('main-ui').style.display = 'none';
+        document.getElementById('relatorio-view').style.display = 'block';
 
+        const cont = document.getElementById('corpo-rel');
+        cont.innerHTML = "<h3>Ranking:</h3>";
+        db.sort((a,b) => b.nota - a.nota).forEach(d => {
+            cont.innerHTML += `<p>• Área ${d.area}: ${d.nota}% (Aval: ${d.aval})</p>`;
+        });
+
+        cont.innerHTML += "<hr><h3>Detalhes:</h3>";
         db.forEach(d => {
-            let res = `<div style="border:1px solid #ccc; margin-top:10px; padding:10px;"><b>ÁREA ${d.area} - NOTA: ${d.nota}%</b>`;
+            let html = `<div class="area-box"><b>ÁREA ${d.area}</b><br>`;
             d.detalhes.forEach(it => {
-                res += `<p style="font-size:12px;">${it.ok?'✅':'❌'} ${it.nome}: ${it.obs}</p>`;
-                it.fotos.forEach(f => { res += `<img src="${f}" style="width:80px; margin:2px;">` });
+                html += `<p style="font-size:12px;">${it.ok?'✅':'❌'} ${it.nome}: ${it.obs}</p>`;
+                if(it.fotos.length > 0) {
+                    html += `<div class="foto-grid">` + it.fotos.map(f => `<img src="${f}" class="foto-resumo">`).join('') + `</div>`;
+                }
             });
-            cont.innerHTML += res + `</div>`;
-        });
-
-        html2canvas(rel).then(canvas => {
-            const img = document.getElementById('img-final');
-            img.src = canvas.toDataURL("image/jpeg", 0.7);
-            img.style.display = "block";
-            rel.style.display = "none";
-            document.getElementById('share-btn').style.display = "block";
-            document.getElementById('report-btn').style.display = "none";
-            document.getElementById('save-btn').style.display = "none";
+            cont.innerHTML += html + `</div>`;
         });
     }
 
-    async function enviar() {
-        const blob = await (await fetch(document.getElementById('img-final').src)).blob();
-        const file = new File([blob], 'Auditoria.jpg', { type: 'image/jpeg' });
-        if (navigator.share) navigator.share({ files: [file], title: 'Auditoria' });
-        else alert("Segure na imagem para salvar e enviar.");
+    function compartilharTextoWA() {
+        let texto = "*AUDITORIA FAB. RAÇÕES BSB*\n\n*Ranking de Performance:*\n";
+        db.sort((a,b) => b.nota - a.nota).forEach(d => {
+            texto += `• Área ${d.area}: ${d.nota}% (Aval: ${d.aval})\n`;
+        });
+        const url = "https://wa.me" + encodeURIComponent(texto);
+        window.open(url, '_blank');
     }
 </script>
 </body>
