@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fab. Rações BSB - Auditoria</title>
+    <title>Fab. Rações BSB - Auditoria Multi-Fotos</title>
     <style>
-        /* Estilos para o App */
         body { font-family: -apple-system, sans-serif; padding: 15px; background: #f0f2f5; color: #333; margin: 0; }
         .no-print { display: block; }
         .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px; border-radius: 10px; border-top: 5px solid #cc0000; margin-bottom: 15px; }
         .header img { height: 30px; }
         .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h3 { color: #cc0000; margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        h3 { color: #cc0000; margin: 0 0 10px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
         input[type="checkbox"] { width: 30px; height: 30px; }
@@ -19,16 +18,16 @@
         .btn-save { background: #004a99; }
         .btn-report { background: #28a745; }
         
-        /* Estilos para o Relatório (O que será impresso/salvo) */
+        /* Relatório Visual */
         #relatorio-final { display: none; background: white; padding: 20px; }
         .print-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
         .area-block { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; page-break-inside: avoid; }
         .ranking-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
         .ranking-table th, .ranking-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         
-        /* Ajuste para múltiplas fotos no relatório */
-        .fotos-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-        .foto-print { max-width: 180px; max-height: 150px; border: 1px solid #ccc; border-radius: 5px; object-fit: cover; }
+        /* Container de fotos no relatório */
+        .fotos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 10px; }
+        .foto-print { width: 100%; height: 120px; border: 1px solid #ccc; border-radius: 5px; object-fit: cover; }
         
         @media print {
             .no-print { display: none !important; }
@@ -57,44 +56,35 @@
     </div>
 
     <div class="card">
-        <h3>2. Checklist</h3>
+        <h3>2. Checklist (Selecione várias fotos)</h3>
         <div id="itens-box"></div>
     </div>
 
     <button class="btn btn-save" onclick="salvarArea()">SALVAR ÁREA ATUAL</button>
     <button class="btn btn-report" onclick="gerarRelatorio()">VISUALIZAR RELATÓRIO FINAL</button>
-    <p id="status" style="text-align:center; font-weight:bold; color:#004a99;">Nenhuma área salva.</p>
+    <p id="status" style="text-align:center; font-weight:bold; color:#004a99;">Aguardando início...</p>
 </div>
 
-<!-- ESTA PARTE SÓ APARECE NO MOMENTO DO RELATÓRIO -->
 <div id="relatorio-final">
     <div class="print-header">
         <h2>FAB. RAÇÕES BSB - JBS/SEARA</h2>
         <p>Relatório de Auditoria Semanal - Data: <span id="print-data"></span></p>
     </div>
-    
     <div id="ranking-section">
-        <h3>Ranking de Performance</h3>
-        <table class="ranking-table" id="tabela-ranking">
+        <table class="ranking-table">
             <thead><tr><th>Posição</th><th>Área</th><th>Nota</th><th>Avaliador</th></tr></thead>
             <tbody id="corpo-ranking"></tbody>
         </table>
     </div>
-
-    <div id="detalhes-section">
-        <h3>Detalhamento por Área</h3>
-        <div id="container-detalhes"></div>
-    </div>
-    
+    <div id="container-detalhes"></div>
     <button class="btn btn-save no-print" onclick="window.print()">IMPRIMIR / SALVAR PDF</button>
-    <button class="btn btn-report no-print" onclick="location.reload()">VOLTAR / NOVA INSPEÇÃO</button>
+    <button class="btn btn-report no-print" onclick="location.reload()">NOVA INSPEÇÃO</button>
 </div>
 
 <script>
     const itensNomes = ["Piso", "Escadas", "Corrimãos", "Portas", "Iluminação", "Equipamentos", "Maquinas", "Limpeza", "Condição Insegura"];
     const db = [];
 
-    // Gerar Itens no App
     const box = document.getElementById('itens-box');
     itensNomes.forEach(item => {
         box.innerHTML += `
@@ -102,8 +92,8 @@
                 <span style="${item==='Condição Insegura'?'color:red;font-weight:bold':''}">${item}</span>
                 <input type="checkbox" class="c-check" data-n="${item}">
             </div>
-            <!-- Adicionado MULTIPLE para permitir várias fotos -->
-            <input type="file" accept="image/*" capture="camera" class="c-foto" data-n="${item}" multiple>
+            <!-- REMOVIDO CAPTURE PARA LIBERAR MÚLTIPLAS FOTOS DA GALERIA/CÂMERA -->
+            <input type="file" accept="image/*" class="c-foto" data-n="${item}" multiple>
             <input type="text" class="c-obs" data-n="${item}" placeholder="Observação...">
         `;
     });
@@ -127,10 +117,9 @@
         dados.nota = Math.max(0, Math.round(dados.nota));
 
         for(let i=0; i < itensNomes.length; i++) {
-            let listaDeFotos = [];
+            let listaFotos = [];
             const arquivos = camposFotos[i].files;
             
-            // Loop para processar todas as fotos do tópico
             if(arquivos.length > 0) {
                 for(let file of arquivos) {
                     const b64 = await new Promise(r => {
@@ -138,21 +127,11 @@
                         rd.onload = e => r(e.target.result);
                         rd.readAsDataURL(file);
                     });
-                    listaDeFotos.push(b64);
+                    listaFotos.push(b64);
                 }
             }
-            
-            dados.detalhes.push({ 
-                nome: itensNomes[i], 
-                ok: checks[i].checked, 
-                obs: obss[i].value, 
-                fotos: listaDeFotos 
-            });
-
-            // Limpar campos
-            checks[i].checked = false; 
-            obss[i].value = ""; 
-            camposFotos[i].value = "";
+            dados.detalhes.push({ nome: itensNomes[i], ok: checks[i].checked, obs: obss[i].value, fotos: listaFotos });
+            checks[i].checked = false; obss[i].value = ""; camposFotos[i].value = "";
         }
 
         db.push(dados);
@@ -162,8 +141,7 @@
     }
 
     function gerarRelatorio() {
-        if(db.length === 0) return alert("Salve uma área!");
-
+        if(db.length === 0) return alert("Salve uma área primeiro!");
         document.querySelector('.no-print').style.display = 'none';
         document.getElementById('relatorio-final').style.display = 'block';
         document.getElementById('print-data').innerText = new Date().toLocaleDateString();
@@ -180,26 +158,16 @@
         db.forEach(d => {
             let itensHtml = "";
             d.detalhes.forEach(it => {
-                // Gera o HTML para múltiplas fotos
                 let fotosHtml = it.fotos.map(f => `<img src="${f}" class="foto-print">`).join('');
-                
                 itensHtml += `
-                    <div style="margin-bottom: 15px;">
-                        <p style="margin-bottom: 5px;"><strong>${it.ok?'[OK]':'[  ]'} ${it.nome}:</strong> ${it.obs}</p>
-                        <div class="fotos-container">${fotosHtml}</div>
+                    <div style="margin-bottom: 15px; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px;">
+                        <p><strong>${it.ok?'[OK]':'[  ]'} ${it.nome}:</strong> ${it.obs}</p>
+                        <div class="fotos-grid">${fotosHtml}</div>
                     </div>
                 `;
             });
-            contDetalhes.innerHTML += `
-                <div class="area-block">
-                    <h4>ÁREA ${d.area} - Nota: ${d.nota}%</h4>
-                    <p>Responsável: ${d.resp} | Avaliador: ${d.aval} | Data: ${d.data}</p>
-                    <hr>
-                    ${itensHtml}
-                </div>
-            `;
+            contDetalhes.innerHTML += `<div class="area-block"><h4>ÁREA ${d.area} - Nota: ${d.nota}%</h4>${itensHtml}</div>`;
         });
-        
         window.scrollTo(0,0);
     }
 </script>
