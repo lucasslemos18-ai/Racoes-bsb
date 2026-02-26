@@ -3,191 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fab. Rações BSB - Auditoria Rápida</title>
-    <!-- Biblioteca para transformar o relatório em imagem -->
+    <title>Fab. Rações BSB</title>
     <script src="https://cdnjs.cloudflare.com"></script>
     <style>
         body { font-family: -apple-system, sans-serif; padding: 15px; background: #f0f2f5; color: #333; margin: 0; }
-        .no-print { display: block; }
         .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px; border-radius: 10px; border-top: 5px solid #cc0000; margin-bottom: 15px; }
         .header img { height: 30px; }
         .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h3 { color: #cc0000; margin: 0 0 10px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; font-size: 1.1em; }
+        h3 { color: #cc0000; margin: 0; font-size: 1.1em; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
-        input[type="checkbox"] { width: 30px; height: 30px; }
-        
-        .foto-btn { background: #6c757d; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; margin: 5px 0; width: 100%; }
-        .preview-container { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
-        .thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; }
-        
-        .btn { width: 100%; padding: 18px; border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 16px; margin: 10px 0; cursor: pointer; }
+        .btn-foto { background: #6c757d; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; margin: 5px 0; }
+        .preview { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+        .thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 5px; border: 1px solid #ddd; }
+        .btn { width: 100%; padding: 18px; border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 16px; margin: 10px 0; }
         .btn-save { background: #004a99; }
         .btn-report { background: #28a745; }
-        .btn-whatsapp { background: #25D366; display: none; }
-        
-        #relatorio-visual { display: none; background: white; padding: 15px; width: 100%; }
-        .area-box { border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 15px; background: #fafafa; }
-        .fotos-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-        .foto-print { width: 80px; height: 80px; border: 1px solid #ccc; object-fit: cover; border-radius: 5px; }
-        #canvas-preview { width: 100%; display: none; border: 2px solid #25D366; border-radius: 10px; margin-top: 10px; }
-        .loading { display: none; color: #cc0000; font-weight: bold; text-align: center; padding: 10px; }
+        .btn-share { background: #25D366; display: none; }
+        #relatorio-hidden { display: none; background: white; padding: 20px; width: 500px; }
+        #img-final { width: 100%; border-radius: 10px; display: none; margin-top: 15px; border: 3px solid #25D366; }
     </style>
 </head>
 <body>
 
-<div id="app-ui">
+<div id="ui">
     <div class="header">
         <img src="https://upload.wikimedia.org">
-        <div style="font-weight: 900; font-size: 0.8em; color: #444;">FAB. RAÇÕES BSB</div>
+        <div style="font-weight: 900; font-size: 0.8em;">FAB. RAÇÕES BSB</div>
         <img src="https://upload.wikimedia.org">
     </div>
 
     <div class="card">
         <h3>Identificação</h3>
-        <select id="area_num">
-            <option value="" disabled selected>Área (1 a 36)</option>
-            <script>for(let i=1;i<=36;i++) document.write(`<option value="${i}">Área ${i}</option>`);</script>
-        </select>
-        <input type="text" id="resp_nome" placeholder="Responsável">
-        <input type="text" id="aval_nome" placeholder="Avaliador">
+        <select id="area"><option value="">Selecione a Área (1-36)</option><script>for(let i=1;i<=36;i++)document.write(`<option value="${i}">Área ${i}</option>`)</script></select>
+        <input type="text" id="resp" placeholder="Responsável">
+        <input type="text" id="aval" placeholder="Avaliador">
     </div>
 
-    <div class="card" id="itens-box">
-        <h3>Checklist</h3>
-    </div>
+    <div id="checklist-box"></div>
 
-    <div id="status-msg" class="loading">GERANDO IMAGEM... AGUARDE.</div>
-    <button class="btn btn-save" id="btn-salvar" onclick="salvarArea()">SALVAR ÁREA</button>
-    <button class="btn btn-report" id="btn-gerar" onclick="gerarRelatorio()">GERAR RELATÓRIO PARA WHATSAPP</button>
-    
-    <!-- Botão de Compartilhamento Direto -->
-    <button class="btn btn-whatsapp" id="btn-share" onclick="compartilharRelatorio()">ENVIAR AGORA NO WHATSAPP</button>
-    <img id="canvas-preview">
+    <button class="btn btn-save" id="save-btn" onclick="salvarArea()">SALVAR ÁREA</button>
+    <button class="btn btn-report" id="report-btn" onclick="gerarRelatorio()">GERAR PARA WHATSAPP</button>
+    <button class="btn btn-share" id="share-btn" onclick="enviar()">ENVIAR NO WHATSAPP</button>
+    <img id="img-final">
+    <p id="info" style="text-align:center; font-weight:bold;"></p>
 </div>
 
-<!-- Relatório Oculto (Usado para o print) -->
-<div id="relatorio-visual">
-    <div style="text-align:center; border-bottom:3px solid #cc0000; padding-bottom:10px; margin-bottom:15px;">
-        <h2 style="margin:0; color:#cc0000;">AUDITORIA FAB. RAÇÕES BSB</h2>
-        <p style="margin:5px 0;">Data: <span id="r-data"></span></p>
-    </div>
-    <div id="r-conteudo"></div>
+<!-- Relatório que vira imagem -->
+<div id="relatorio-hidden">
+    <h2 style="color:red; text-align:center; border-bottom:2px solid red;">AUDITORIA RAÇÕES BSB</h2>
+    <div id="conteudo-rel"></div>
 </div>
 
 <script>
-    const itensNomes = ["Piso", "Escadas", "Corrimãos", "Portas", "Iluminação", "Equipamentos", "Maquinas", "Limpeza", "Condição Insegura"];
+    const itens = ["Piso", "Escadas", "Corrimãos", "Portas", "Iluminação", "Equipamentos", "Maquinas", "Limpeza", "Condição Insegura"];
     const db = [];
     const fotosTemp = {};
 
-    const box = document.getElementById('itens-box');
-    itensNomes.forEach(item => {
-        fotosTemp[item] = [];
+    const box = document.getElementById('checklist-box');
+    itens.forEach(it => {
+        fotosTemp[it] = [];
         box.innerHTML += `
-            <div class="item-row">
-                <span style="${item==='Condição Insegura'?'color:red;font-weight:bold':''}">${item}</span>
-                <input type="checkbox" class="c-check" data-n="${item}">
+            <div class="card">
+                <div class="item-row">
+                    <span style="${it==='Condição Insegura'?'color:red;font-weight:bold':''}">${it}</span>
+                    <input type="checkbox" class="c-check" data-n="${it}">
+                </div>
+                <button class="btn-foto" onclick="document.getElementById('in-${it}').click()">＋ ADICIONAR FOTO</button>
+                <input type="file" id="in-${it}" accept="image/*" capture="camera" style="display:none" onchange="addFoto('${it}', this)">
+                <div id="pre-${it}" class="preview"></div>
+                <input type="text" class="c-obs" data-n="${it}" placeholder="Obs...">
             </div>
-            <button class="foto-btn" onclick="document.getElementById('in-${item}').click()">＋ FOTO</button>
-            <input type="file" id="in-${item}" accept="image/*" capture="camera" style="display:none" onchange="addFoto('${item}', this)">
-            <div id="pre-${item}" class="preview-container"></div>
-            <input type="text" class="c-obs" data-n="${item}" placeholder="Obs...">
         `;
     });
 
-    function addFoto(item, input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = e => {
-                fotosTemp[item].push(e.target.result);
-                document.getElementById(`pre-${item}`).innerHTML += `<img src="${e.target.result}" class="thumb">`;
-            };
-            reader.readAsDataURL(input.files[0]);
-            input.value = "";
-        }
+    function addFoto(it, input) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            fotosTemp[it].push(e.target.result);
+            document.getElementById(`pre-${it}`).innerHTML += `<img src="${e.target.result}" class="thumb">`;
+        };
+        reader.readAsDataURL(input.files[0]);
+        input.value = "";
     }
 
-    async function salvarArea() {
-        const a = document.getElementById('area_num').value;
-        const r = document.getElementById('resp_nome').value;
-        const v = document.getElementById('aval_nome').value;
-        if(!a || !r || !v) return alert("Preencha Identificação!");
-
-        const dados = { area: a, resp: r, aval: v, nota: 100, detalhes: [] };
+    function salvarArea() {
+        const area = document.getElementById('area').value;
+        if(!area) return alert("Selecione a área!");
+        
+        const dados = { area, nota: 100, detalhes: [] };
         const checks = document.querySelectorAll('.c-check');
         const obss = document.querySelectorAll('.c-obs');
 
-        if(document.querySelector('.c-check[data-n="Condição Insegura"]').checked) {
-            dados.nota = 0;
-        } else {
-            checks.forEach(c => { if(c.dataset.n !== "Condição Insegura" && !c.checked) dados.nota -= 11.1; });
-        }
-        dados.nota = Math.max(0, Math.round(dados.nota));
+        if(document.querySelector('.c-check[data-n="Condição Insegura"]').checked) dados.nota = 0;
+        else checks.forEach(c => { if(c.dataset.n !== "Condição Insegura" && !c.checked) dados.nota -= 11; });
 
-        itensNomes.forEach((item, i) => {
-            dados.detalhes.push({ nome: item, ok: checks[i].checked, obs: obss[i].value, fotos: [...fotosTemp[item]] });
-            checks[i].checked = false; obss[i].value = ""; fotosTemp[item] = [];
-            document.getElementById(`pre-${item}`).innerHTML = "";
+        itens.forEach((it, i) => {
+            dados.detalhes.push({ nome: it, ok: checks[i].checked, obs: obss[i].value, fotos: [...fotosTemp[it]] });
+            checks[i].checked = false; obss[i].value = ""; 
+            fotosTemp[it] = []; document.getElementById(`pre-${it}`).innerHTML = "";
         });
 
         db.push(dados);
-        document.getElementById('area_num').value = "";
-        alert("Área " + a + " salva!");
+        document.getElementById('info').innerText = `Áreas Salvas: ${db.length}`;
+        alert("Área salva!");
     }
 
-    async function gerarRelatorio() {
+    function gerarRelatorio() {
         if(db.length === 0) return alert("Salve uma área!");
-        
-        document.getElementById('status-msg').style.display = 'block';
-        const rel = document.getElementById('relatorio-visual');
-        rel.style.display = 'block';
-        document.getElementById('r-data').innerText = new Date().toLocaleDateString();
-
-        const cont = document.getElementById('r-conteudo');
+        const rel = document.getElementById('relatorio-hidden');
+        const cont = document.getElementById('conteudo-rel');
+        rel.style.display = "block";
         cont.innerHTML = "";
+
         db.forEach(d => {
-            let itensHtml = d.detalhes.map(it => `
-                <div style="font-size:12px; margin-bottom:8px; border-bottom:1px solid #eee;">
-                    <strong>${it.ok?'✅':'❌'} ${it.nome}</strong>: ${it.obs}
-                    <div class="fotos-grid">${it.fotos.map(f => `<img src="${f}" class="foto-print">`).join('')}</div>
-                </div>
-            `).join('');
-            cont.innerHTML += `<div class="area-box"><strong>ÁREA ${d.area} - NOTA: ${d.nota}%</strong><br><small>Resp: ${d.resp}</small>${itensHtml}</div>`;
+            let res = `<div style="border:1px solid #ccc; margin-top:10px; padding:10px;"><b>ÁREA ${d.area} - NOTA: ${d.nota}%</b>`;
+            d.detalhes.forEach(it => {
+                res += `<p style="font-size:12px;">${it.ok?'✅':'❌'} ${it.nome}: ${it.obs}</p>`;
+                it.fotos.forEach(f => { res += `<img src="${f}" style="width:80px; margin:2px;">` });
+            });
+            cont.innerHTML += res + `</div>`;
         });
 
-        setTimeout(() => {
-            html2canvas(rel, { scale: 2, useCORS: true }).then(canvas => {
-                const img = document.getElementById('canvas-preview');
-                img.src = canvas.toDataURL("image/jpeg", 0.8);
-                img.style.display = "block";
-                rel.style.display = "none";
-                document.getElementById('status-msg').style.display = 'none';
-                document.getElementById('btn-share').style.display = 'block';
-                document.getElementById('btn-gerar').style.display = 'none';
-                document.getElementById('btn-salvar').style.display = 'none';
-                alert("Relatório pronto para envio!");
-            });
-        }, 800);
+        html2canvas(rel).then(canvas => {
+            const img = document.getElementById('img-final');
+            img.src = canvas.toDataURL("image/jpeg", 0.7);
+            img.style.display = "block";
+            rel.style.display = "none";
+            document.getElementById('share-btn').style.display = "block";
+            document.getElementById('report-btn').style.display = "none";
+            document.getElementById('save-btn').style.display = "none";
+        });
     }
 
-    async function compartilharRelatorio() {
-        const imgData = document.getElementById('canvas-preview').src;
-        const blob = await (await fetch(imgData)).blob();
-        const file = new File([blob], 'Auditoria_BSB.jpg', { type: 'image/jpeg' });
-
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    files: [file],
-                    title: 'Auditoria Fab. Rações BSB',
-                    text: 'Segue relatório de auditoria concluído.'
-                });
-            } catch (err) {
-                alert("Erro ao compartilhar. Tente salvar a imagem manualmente.");
-            }
-        } else {
-            alert("Seu navegador não suporta compartilhamento direto. Segure o dedo na imagem para salvar.");
-        }
+    async function enviar() {
+        const blob = await (await fetch(document.getElementById('img-final').src)).blob();
+        const file = new File([blob], 'Auditoria.jpg', { type: 'image/jpeg' });
+        if (navigator.share) navigator.share({ files: [file], title: 'Auditoria' });
+        else alert("Segure na imagem para salvar e enviar.");
     }
 </script>
 </body>
