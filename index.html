@@ -1,0 +1,155 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Checklist Fab. Rações BSB</title>
+    <script src="https://cdnjs.cloudflare.com"></script>
+    <script src="https://cdn.jsdelivr.net"></script>
+    <style>
+        body { font-family: -apple-system, system-ui, sans-serif; padding: 15px; background: #f0f2f5; color: #333; -webkit-tap-highlight-color: transparent; }
+        .header-logos { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px; border-radius: 10px; margin-bottom: 15px; border-top: 5px solid #cc0000; }
+        .header-logos img { height: 30px; }
+        .title-app { text-align: center; color: #004a99; font-weight: bold; margin: 10px 0; font-size: 1.2em; text-transform: uppercase; }
+        .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h3 { color: #cc0000; margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 5px; font-size: 1.1em; }
+        .item-aval { border-bottom: 1px solid #eee; padding: 15px 0; }
+        .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        input[type="checkbox"] { width: 30px; height: 30px; cursor: pointer; }
+        input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        input[type="file"] { margin: 10px 0; font-size: 14px; width: 100%; }
+        #signature-pad { border: 2px dashed #999; width: 100%; height: 200px; background: #fff; border-radius: 8px; touch-action: none; }
+        .btn-acao { width: 100%; padding: 18px; margin: 10px 0; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; color: white; }
+        .save-btn { background: #004a99; }
+        .final-btn { background: #28a745; }
+        select { width: 100%; padding: 15px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; background: white; }
+    </style>
+</head>
+<body>
+
+<div class="header-logos">
+    <img src="https://upload.wikimedia.org">
+    <div style="font-weight: bold; font-size: 0.8em;">Fab. Rações BSB</div>
+    <img src="https://upload.wikimedia.org">
+</div>
+
+<div class="title-app">Avaliação Semanal</div>
+
+<div class="card">
+    <h3>Identificação</h3>
+    <select id="area">
+        <option value="" disabled selected>Toque para escolher a área...</option>
+        <script>for(let i=1;i<=20;i++) document.write(`<option value="${i}">Área ${i}</option>`);</script>
+    </select>
+</div>
+
+<div class="card" id="checklist">
+    <h3>Itens de Inspeção</h3>
+    
+    <!-- Bloco de Itens Manual para Garantir que Apareça -->
+    <script>
+        const itensConfig = ["Piso", "Escadas", "Corrimãos", "Portas", "Iluminação", "Equipamentos", "Maquinas", "Organização/Limpeza", "Condição Insegura"];
+        itensConfig.forEach(item => {
+            document.write(`
+                <div class="item-aval">
+                    <div class="row">
+                        <span style="${item === 'Condição Insegura' ? 'color:red; font-weight:bold;' : ''}">${item}</span>
+                        <input type="checkbox" id="check-${item}">
+                    </div>
+                    <input type="file" accept="image/*" capture="camera" id="img-${item}">
+                    <input type="text" id="obs-${item}" placeholder="Observação para ${item}...">
+                </div>
+            `);
+        });
+    </script>
+</div>
+
+<div class="card">
+    <h3>Assinatura / Rubrica</h3>
+    <canvas id="signature-pad"></canvas>
+    <button onclick="signaturePad.clear()" style="width:100%; background:none; border:none; color:blue; text-decoration:underline; margin-top:10px;">Limpar</button>
+</div>
+
+<button class="btn-acao save-btn" onclick="salvarAvaliacao()">SALVAR ÁREA ATUAL</button>
+<button class="btn-acao final-btn" onclick="gerarRelatorioFinal()">GERAR RELATÓRIO PDF</button>
+
+<script>
+    // Inicialização forçada para iOS
+    let signaturePad;
+    window.onload = function() {
+        const canvas = document.getElementById('signature-pad');
+        // Ajusta o tamanho do canvas para o tamanho da tela do iPhone
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        canvas.getContext("2d").scale(ratio, ratio);
+        signaturePad = new SignaturePad(canvas);
+    };
+
+    const avaliacoesSalvas = [];
+
+    async function salvarAvaliacao() {
+        const area = document.getElementById('area').value;
+        if(!area) return alert("Selecione a área primeiro!");
+
+        const dados = { nome: "Área " + area, data: new Date().toLocaleString(), itens: [], assinatura: signaturePad.toDataURL() };
+        let nota = 100;
+
+        if(document.getElementById('check-Condição Insegura').checked) {
+            nota = 0;
+        } else {
+            itensConfig.slice(0, -1).forEach(it => {
+                if(!document.getElementById(`check-${it}`).checked) nota -= 10;
+            });
+        }
+        dados.nota = nota;
+
+        for(let it of itensConfig) {
+            const file = document.getElementById(`img-${it}`).files[0];
+            dados.itens.push({
+                nome: it,
+                ok: document.getElementById(`check-${it}`).checked,
+                obs: document.getElementById(`obs-${it}`).value || "",
+                foto: file ? await toBase64(file) : null
+            });
+        }
+
+        avaliacoesSalvas.push(dados);
+        alert("Área " + area + " salva com sucesso!");
+        window.scrollTo(0,0);
+    }
+
+    const toBase64 = file => new Promise((res) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => res(reader.result);
+    });
+
+    async function gerarRelatorioFinal() {
+        if(avaliacoesSalvas.length === 0) return alert("Salve uma área antes!");
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        doc.text("FAB. RAÇÕES BSB - RANKING", 105, 20, {align:"center"});
+        const sorted = [...avaliacoesSalvas].sort((a,b) => b.nota - a.nota);
+        doc.text("Melhores: " + sorted[0].nome, 10, 40);
+
+        avaliacoesSalvas.forEach((av, i) => {
+            doc.addPage();
+            doc.text(`${av.nome} - Nota: ${av.nota}%`, 10, 20);
+            let y = 40;
+            av.itens.forEach(it => {
+                doc.text(`${it.nome}: ${it.ok?'OK':'X'} - ${it.obs}`, 10, y);
+                if(it.foto) { doc.addImage(it.foto, 'JPEG', 150, y-5, 40, 25); y+=20; }
+                y+=10;
+            });
+            if(av.assinatura) doc.addImage(av.assinatura, 'PNG', 10, 250, 40, 20);
+        });
+
+        const pdfBlob = doc.output('blob');
+        const file = new File([pdfBlob], 'Relatorio.pdf', { type: 'application/pdf' });
+        if (navigator.share) await navigator.share({ files: [file] }); else doc.save();
+    }
+</script>
+</body>
+</html>
