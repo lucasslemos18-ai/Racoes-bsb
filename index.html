@@ -25,7 +25,10 @@
         .area-block { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; page-break-inside: avoid; }
         .ranking-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
         .ranking-table th, .ranking-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .foto-print { max-width: 200px; max-height: 150px; display: block; margin-top: 5px; border: 1px solid #ccc; }
+        
+        /* Ajuste para múltiplas fotos no relatório */
+        .fotos-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .foto-print { max-width: 180px; max-height: 150px; border: 1px solid #ccc; border-radius: 5px; object-fit: cover; }
         
         @media print {
             .no-print { display: none !important; }
@@ -99,7 +102,8 @@
                 <span style="${item==='Condição Insegura'?'color:red;font-weight:bold':''}">${item}</span>
                 <input type="checkbox" class="c-check" data-n="${item}">
             </div>
-            <input type="file" accept="image/*" capture="camera" class="c-foto" data-n="${item}">
+            <!-- Adicionado MULTIPLE para permitir várias fotos -->
+            <input type="file" accept="image/*" capture="camera" class="c-foto" data-n="${item}" multiple>
             <input type="text" class="c-obs" data-n="${item}" placeholder="Observação...">
         `;
     });
@@ -112,27 +116,43 @@
 
         const dados = { area, resp, aval, data: new Date().toLocaleString(), nota: 100, detalhes: [] };
         const checks = document.querySelectorAll('.c-check');
-        const fotos = document.querySelectorAll('.c-foto');
+        const camposFotos = document.querySelectorAll('.c-foto');
         const obss = document.querySelectorAll('.c-obs');
 
         if(document.querySelector('.c-check[data-n="Condição Insegura"]').checked) {
             dados.nota = 0;
         } else {
-            checks.forEach(c => { if(c.dataset.n !== "Condição Insegura" && !c.checked) dados.nota -= 10; });
+            checks.forEach(c => { if(c.dataset.n !== "Condição Insegura" && !c.checked) dados.nota -= 11.1; });
         }
+        dados.nota = Math.max(0, Math.round(dados.nota));
 
         for(let i=0; i < itensNomes.length; i++) {
-            let fotoSrc = "";
-            if(fotos[i].files[0]) {
-                fotoSrc = await new Promise(r => {
-                    const rd = new FileReader();
-                    rd.onload = e => r(e.target.result);
-                    rd.readAsDataURL(fotos[i].files[0]);
-                });
+            let listaDeFotos = [];
+            const arquivos = camposFotos[i].files;
+            
+            // Loop para processar todas as fotos do tópico
+            if(arquivos.length > 0) {
+                for(let file of arquivos) {
+                    const b64 = await new Promise(r => {
+                        const rd = new FileReader();
+                        rd.onload = e => r(e.target.result);
+                        rd.readAsDataURL(file);
+                    });
+                    listaDeFotos.push(b64);
+                }
             }
-            dados.detalhes.push({ nome: itensNomes[i], ok: checks[i].checked, obs: obss[i].value, foto: fotoSrc });
+            
+            dados.detalhes.push({ 
+                nome: itensNomes[i], 
+                ok: checks[i].checked, 
+                obs: obss[i].value, 
+                fotos: listaDeFotos 
+            });
+
             // Limpar campos
-            checks[i].checked = false; obss[i].value = ""; fotos[i].value = "";
+            checks[i].checked = false; 
+            obss[i].value = ""; 
+            camposFotos[i].value = "";
         }
 
         db.push(dados);
@@ -144,12 +164,10 @@
     function gerarRelatorio() {
         if(db.length === 0) return alert("Salve uma área!");
 
-        // Esconde App e mostra Relatório
         document.querySelector('.no-print').style.display = 'none';
         document.getElementById('relatorio-final').style.display = 'block';
         document.getElementById('print-data').innerText = new Date().toLocaleDateString();
 
-        // Gerar Ranking
         const corpoRanking = document.getElementById('corpo-ranking');
         corpoRanking.innerHTML = "";
         const sorted = [...db].sort((a,b) => b.nota - a.nota);
@@ -157,21 +175,26 @@
             corpoRanking.innerHTML += `<tr><td>${i+1}º</td><td>Área ${s.area}</td><td>${s.nota}%</td><td>${s.aval}</td></tr>`;
         });
 
-        // Gerar Detalhes
         const contDetalhes = document.getElementById('container-detalhes');
         contDetalhes.innerHTML = "";
         db.forEach(d => {
             let itensHtml = "";
             d.detalhes.forEach(it => {
+                // Gera o HTML para múltiplas fotos
+                let fotosHtml = it.fotos.map(f => `<img src="${f}" class="foto-print">`).join('');
+                
                 itensHtml += `
-                    <p><strong>${it.ok?'[OK]':'[  ]'} ${it.nome}:</strong> ${it.obs} 
-                    ${it.foto ? `<br><img src="${it.foto}" class="foto-print">` : ''}</p>
+                    <div style="margin-bottom: 15px;">
+                        <p style="margin-bottom: 5px;"><strong>${it.ok?'[OK]':'[  ]'} ${it.nome}:</strong> ${it.obs}</p>
+                        <div class="fotos-container">${fotosHtml}</div>
+                    </div>
                 `;
             });
             contDetalhes.innerHTML += `
                 <div class="area-block">
                     <h4>ÁREA ${d.area} - Nota: ${d.nota}%</h4>
                     <p>Responsável: ${d.resp} | Avaliador: ${d.aval} | Data: ${d.data}</p>
+                    <hr>
                     ${itensHtml}
                 </div>
             `;
