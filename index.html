@@ -150,51 +150,87 @@
         window.scrollTo(0,0);
     }
 
-    function gerarPDF() {
-        if (bancoDeDados.length === 0) {
-            alert("❌ Erro: Salve pelo menos uma área antes de gerar o PDF!");
-            return;
-        }
+    async function gerarPDF() {
+    if (bancoDeDados.length === 0) {
+        alert("❌ Erro: Salve pelo menos uma área antes de gerar o PDF!");
+        return;
+    }
 
+    try {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
+        const dataAtual = new Date().toLocaleDateString('pt-BR');
 
-        // Ranking
+        // PÁGINA 1: RANKING
         doc.setFontSize(18); doc.setTextColor(200, 0, 0);
         doc.text("FAB. RAÇÕES BSB - RANKING FINAL", 105, 20, {align:"center"});
+        doc.setFontSize(10); doc.setTextColor(100);
+        doc.text(`Relatório emitido em: ${dataAtual}`, 105, 28, {align:"center"});
         
         const sorted = [...bancoDeDados].sort((a,b) => b.nota - a.nota);
         doc.setFontSize(12); doc.setTextColor(0);
-        sorted.forEach((a, i) => {
-            doc.text(`${i+1}. Área ${a.id}: ${a.nota}% (Avaliador: ${a.avaliador})`, 20, 40 + (i*8));
-        });
-
-        // Detalhes
-        bancoDeDados.forEach(area => {
-            doc.addPage();
-            doc.setFontSize(16); doc.text(`Área ${area.id} - Nota: ${area.nota}%`, 10, 20);
-            doc.setFontSize(10); doc.text(`Avaliador: ${area.avaliador} | Responsável: ${area.responsavel}`, 10, 28);
-            
-            let y = 40;
-            area.itens.forEach(it => {
-                doc.text(`${it.ok?'[OK]':'[  ]'} ${it.nome}: ${it.obs}`, 10, y);
-                if (it.foto) {
-                    try { doc.addImage(it.foto, 'JPEG', 150, y-5, 40, 25); y += 20; } catch(e) {}
-                }
-                y += 10;
-                if (y > 270) { doc.addPage(); y = 20; }
-            });
-        });
-
-        const pdfBlob = doc.output('blob');
-        const file = new File([pdfBlob], 'Relatorio_BSB.pdf', { type: 'application/pdf' });
+        doc.text("CLASSIFICAÇÃO POR NOTA:", 20, 45);
         
-        if (navigator.share) {
-            navigator.share({ files: [file], title: 'Relatório BSB' }).catch(() => doc.save('Relatorio_BSB.pdf'));
-        } else {
-            doc.save('Relatorio_BSB.pdf');
+        sorted.forEach((a, i) => {
+            const cor = a.nota < 70 ? [200, 0, 0] : [0, 100, 0];
+            doc.setTextColor(cor[0], cor[1], cor[2]);
+            doc.text(`${i+1}º Área ${a.id}: ${a.nota}% - Avaliador: ${a.avaliador}`, 25, 55 + (i*10));
+        });
+
+        // DETALHES POR ÁREA
+        for (let area of bancoDeDados) {
+            doc.addPage();
+            doc.setTextColor(0);
+            doc.setFontSize(16); doc.text(`DETALHES: ÁREA ${area.id}`, 10, 20);
+            doc.setFontSize(10); doc.text(`Avaliador: ${area.avaliador} | Responsável: ${area.responsavel} | Data: ${area.data}`, 10, 28);
+            doc.text(`PONTUAÇÃO FINAL: ${area.nota}%`, 10, 34);
+            doc.line(10, 36, 200, 36);
+            
+            let y = 45;
+            for (let it of area.itens) {
+                doc.setFont("helvetica", "bold");
+                doc.text(`${it.ok ? '[OK]' : '[  ]'} ${it.nome}`, 10, y);
+                doc.setFont("helvetica", "normal");
+                doc.text(`Obs: ${it.obs}`, 10, y + 5);
+                
+                if (it.foto) {
+                    try {
+                        // Reduz um pouco o tamanho da imagem para evitar erro de memória no PDF
+                        doc.addImage(it.foto, 'JPEG', 140, y - 5, 50, 32); 
+                        y += 25;
+                    } catch(e) {
+                        console.error("Erro ao incluir foto no PDF");
+                    }
+                }
+                y += 12;
+                if (y > 270) { doc.addPage(); y = 20; }
+            }
         }
+
+        // --- MUDANÇA CRÍTICA PARA IOS ---
+        const pdfOutput = doc.output('blob');
+        const filename = `Relatorio_Racoes_BSB_${dataAtual.replace(/\//g,'-')}.pdf`;
+        const file = new File([pdfOutput], filename, { type: 'application/pdf' });
+
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                files: [file],
+                title: 'Relatório Fab. Rações BSB',
+                text: 'Segue o relatório de auditoria semanal.'
+            });
+        } else {
+            // Caso o compartilhamento falhe, abre o PDF em uma nova aba (funciona no Safari)
+            const url = URL.createObjectURL(pdfOutput);
+            window.open(url, '_blank');
+            alert("O compartilhamento nativo falhou, o PDF foi aberto em uma nova aba. Use o ícone de seta para enviar ao WhatsApp.");
+        }
+
+    } catch (error) {
+        console.error(error);
+        alert("Erro ao gerar PDF: " + error.message);
     }
+}
 </script>
 </body>
 </html>
+
