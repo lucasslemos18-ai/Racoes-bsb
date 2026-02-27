@@ -43,8 +43,7 @@
     <div class="card">
         <h3>1. Identificação</h3>
         <select id="area_sel">
-            <option value="" disabled selected>Selecione a Área (1-36)</option>
-            <script>for(let i=1;i<=36;i++)document.write(`<option value="${i}">Área ${i}</option>`);</script>
+            <option value="" disabled selected>Selecione a Área Específica</option>
         </select>
         <input type="text" id="resp" placeholder="Responsável da Área">
         <input type="text" id="aval" placeholder="Nome do Avaliador">
@@ -71,13 +70,34 @@
 </div>
 
 <script>
+    // ÁREAS ATUALIZADAS CONFORME IMAGEM
+    const nomesAreas = [
+        "Area 01 - Ambiente dos resfriadores", "Area 02 - Piso dos resfriadores", "Area 03 - Prensas",
+        "Area 04 - Condicionadores", "Area 05 - Laje", "Area 06 - Insuflador de ar resfriadores",
+        "Area 07 - Silo das prensas", "Area 08 - Primeiro andar expedição", "Area 09 - Segundo andar expedição",
+        "Area 10 - Silos de dosagem de materia prima", "Area 11 - Misturador", "Area 12 - Redler pos misturador",
+        "Area 13 - Redlers subsolo da expedição", "Area 14 - Armazem", "Area 15 - Balanças e silos de microdosagem",
+        "Area 16 - Sala de medicamentos", "Area 17 - Laboratorio", "Area 18 - Sala de comando",
+        "Area 19 - Sala de pesagem manual", "Area 20 - Sala de contra provas", "Area 21 - Expedição externa",
+        "Area 22 - Moagem", "Area 23 - Moega de alternativos", "Area 24 - Caldeira",
+        "Area 25 - Tombador e silos externos", "Area 26 - Oficina de apoio manutenção", "Area 27 - Controladoria",
+        "Area 28 - Bloco administrativo", "Area 29 - Oficina da manutenção", "Area 30 - Area de lazer",
+        "Area 31 - Vestiario masculino", "Area 32 - Vestiario feminino", "Area 33 - Tanques de liquidos",
+        "Area 34 - Central de residuos"
+    ];
+
+    const sel = document.getElementById('area_sel');
+    nomesAreas.forEach(txt => {
+        let opt = document.createElement('option');
+        opt.value = txt; opt.innerText = txt;
+        sel.appendChild(opt);
+    });
+
     const itens = ["Estruturas", "Elétrica", "Equipamentos", "Organização 5S", "Condição Insegura"];
     const db = [];
     let fotosTemp = {};
 
-    function initFotos() {
-        itens.forEach(it => fotosTemp[it] = []);
-    }
+    function initFotos() { itens.forEach(it => fotosTemp[it] = []); }
     initFotos();
 
     const container = document.getElementById('checklist-container');
@@ -98,10 +118,7 @@
 
     function processarFoto(it, input) {
         if (!input.files || !input.files[0]) return;
-        
-        const file = input.files[0];
         const reader = new FileReader();
-        
         reader.onload = function(e) {
             const img = new Image();
             img.src = e.target.result;
@@ -109,74 +126,55 @@
                 const canvas = document.createElement('canvas');
                 const MAX = 800;
                 let w = img.width, h = img.height;
-                
                 if (w > h) { if (w > MAX) { h *= MAX/w; w = MAX; } }
                 else { if (h > MAX) { w *= MAX/h; h = MAX; } }
-                
                 canvas.width = w; canvas.height = h;
-                const ctx = canvas.getContext("2d");
-                ctx.drawImage(img, 0, 0, w, h);
-                
+                canvas.getContext("2d").drawImage(img, 0, 0, w, h);
                 const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
                 fotosTemp[it].push(dataUrl);
-                
                 const thumb = document.createElement('img');
-                thumb.src = dataUrl; 
-                thumb.className = 'thumb';
+                thumb.src = dataUrl; thumb.className = 'thumb';
                 document.getElementById('pre-' + it).appendChild(thumb);
             };
         };
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(input.files[0]);
     }
 
     function salvarArea() {
         const area = document.getElementById('area_sel').value;
         const resp = document.getElementById('resp').value;
         const aval = document.getElementById('aval').value;
-        
-        if(!area || !resp || !aval) return alert("Preencha Área, Responsável e Avaliador!");
+        if(!area || !resp || !aval) return alert("Preencha Identificação Completa!");
         
         const dadosArea = { area, resp, aval, data: new Date().toLocaleString(), falhas: [] };
         const checks = document.querySelectorAll('.c-check');
         const obss = document.querySelectorAll('.c-obs');
-
-        let temInsegura = false;
-        let descontos = 0;
+        let temInsegura = false, descontos = 0;
 
         checks.forEach((c, i) => {
             if(c.checked) {
                 const nome = c.dataset.n;
                 if(nome === "Condição Insegura") temInsegura = true;
                 else descontos += 10;
-                
-                dadosArea.falhas.push({ 
-                    nome, 
-                    obs: obss[i].value, 
-                    fotos: Array.from(fotosTemp[nome]) 
-                });
+                dadosArea.falhas.push({ nome, obs: obss[i].value, fotos: Array.from(fotosTemp[nome]) });
             }
         });
 
         dadosArea.nota = temInsegura ? 0 : Math.max(0, 100 - descontos);
         db.push(dadosArea);
 
-        // Reset Total
         document.getElementById('area_sel').value = "";
         document.getElementById('resp').value = "";
         checks.forEach(c => c.checked = false);
         obss.forEach(o => o.value = "");
-        itens.forEach(it => {
-            document.getElementById('pre-' + it).innerHTML = "";
-            fotosTemp[it] = [];
-        });
-
-        alert(`Área ${area} salva com sucesso!`);
+        itens.forEach(it => { document.getElementById('pre-' + it).innerHTML = ""; fotosTemp[it] = []; });
+        
+        alert(`Área salva! Nota: ${dadosArea.nota}%`);
         document.getElementById('contador').innerText = `Áreas salvas: ${db.length}`;
     }
 
     function mostrarRelatorio() {
         if(db.length === 0) return alert("Salve uma área primeiro!");
-        
         document.getElementById('main-ui').style.display = 'none';
         document.getElementById('relatorio-view').style.display = 'block';
         document.getElementById('data-rel').innerText = new Date().toLocaleString();
@@ -184,74 +182,38 @@
         let rankingHtml = `<table class="ranking-table"><tr><th>Área</th><th>Responsável</th><th>Nota</th></tr>`;
         let detalhesHtml = "";
 
-        db.sort((a,b) => a.area - b.area).forEach(d => {
+        db.forEach(d => {
             rankingHtml += `<tr><td>${d.area}</td><td>${d.resp}</td><td>${d.nota}%</td></tr>`;
             detalhesHtml += `<div class="area-box">
-                <h3 style="background:#eee;padding:8px">📍 Área ${d.area} - 👤 ${d.resp} (Nota: ${d.nota}%)</h3>
-                <p style="font-size:12px; color:#555; margin-bottom:10px;">📝 Avaliador: ${d.aval} | 📅 ${d.data}</p>`;
-                
-            if(d.falhas.length === 0) {
-                detalhesHtml += `<p style="color:green; font-weight:bold;">✓ Conforme</p>`;
-            } else {
-                d.falhas.forEach(f => {
-                    detalhesHtml += `
+                <h3 style="background:#eee;padding:8px">📍 ${d.area} - 👤 ${d.resp} (Nota: ${d.nota}%)</h3>
+                <p style="font-size:12px; color:#555">📝 Avaliador: ${d.aval} | 📅 ${d.data}</p>
+                ${d.falhas.length === 0 ? '<p style="color:green">✓ Conforme</p>' : d.falhas.map(f => `
                     <div style="margin-top:10px; border-top:1px solid #ddd; padding-top:5px;">
                         <b style="${f.nome==='Condição Insegura'?'color:red':''}">⚠️ ${f.nome}</b><br>
                         <span>Obs: ${f.obs || 'N/A'}</span>
                         <div class="foto-grid">${f.fotos.map(img => `<img src="${img}" class="foto-resumo">`).join('')}</div>
-                    </div>`;
-                });
-            }
-            detalhesHtml += `</div>`;
+                    </div>`).join('')}
+            </div>`;
         });
-        
         document.getElementById('corpo-ranking').innerHTML = rankingHtml + "</table>";
         document.getElementById('corpo-detalhes').innerHTML = detalhesHtml;
-        window.scrollTo(0,0);
     }
 
     function compartilharWA() {
         if (db.length === 0) return;
-        
         const dataAgora = new Date().toLocaleString();
         let ranking = [...db].sort((a,b) => b.nota - a.nota).slice(0, 5);
-        
-        let txt = "🏭 *VISTORIA SEMANAL RAÇÕES BSB*\n";
-        txt += `📅 *DATA:* ${dataAgora}\n`;
-        txt += "----------------------------------------\n\n";
-        
-        txt += "🏆 *TOP 5 AREAS (RANKING)*\n";
+        let txt = "🏭 *VISTORIA SEMANAL RAÇÕES BSB*\n📅 *DATA:* " + dataAgora + "\n----------------------------------------\n\n🏆 *TOP 5 AREAS*\n";
         const medalhas = ["🥇", "🥈", "🥉", "🏅", "🏅"];
-        ranking.forEach((d, i) => {
-            txt += `${medalhas[i]} *${d.nota}%* - Área ${d.area} (${d.resp})\n`;
+        ranking.forEach((d, i) => { txt += medalhas[i] + " *" + d.nota + "%* - " + d.area + "\n"; });
+        txt += "\n📋 *PENDÊNCIAS*\n----------------------------------------\n";
+        db.filter(d => d.falhas.length > 0).forEach(d => {
+            txt += "\n📍 *" + d.area + "* (" + d.nota + "%)\n👤 Resp: " + d.resp + "\n📝 Aval: " + d.aval + "\n";
+            d.falhas.forEach(f => { txt += "⚠️ _" + f.nome + "_ " + (f.obs ? "- " + f.obs : "") + "\n"; });
         });
-        
-        txt += "\n📋 *DETALHAMENTO DE PENDÊNCIAS*\n";
-        txt += "----------------------------------------\n";
-        
-        let pendencias = db.filter(d => d.falhas.length > 0);
-        if(pendencias.length === 0) {
-            txt += "✅ Todas as áreas estão conformes!\n";
-        } else {
-            pendencias.forEach(d => {
-                txt += `\n📍 *Área ${d.area}* (${d.nota}%)\n`;
-                txt += `👤 Resp: ${d.resp}\n`;
-                txt += `📝 Aval: ${d.aval}\n`;
-                txt += `🕒 Hora: ${d.data.split(' ')[1]}\n`; // Pega apenas a hora da vistoria daquela área
-                d.falhas.forEach(f => {
-                    txt += `⚠️ _${f.nome}_ ${f.obs ? '- ' + f.obs : ''}\n`;
-                });
-            });
-        }
-
-        const encodedTxt = encodeURIComponent(txt);
-        const waLink = "whatsapp://send?text=" + encodedTxt;
-        const webLink = "https://wa.me" + encodedTxt;
-        
-        window.location.href = waLink;
-        setTimeout(() => {
-            if (document.hasFocus()) { window.open(webLink, "_blank"); }
-        }, 500);
+        const url = "whatsapp://send?text=" + encodeURIComponent(txt);
+        window.location.href = url;
+        setTimeout(() => { if (document.hasFocus()) window.open("https://wa.me" + encodeURIComponent(txt), "_blank"); }, 500);
     }
 </script>
 </body>
