@@ -181,14 +181,37 @@
         });
     }
 
-    function compartilharTextoWA() {
-        let texto = "*AUDITORIA FAB. RAÇÕES BSB*\n*Relatório Semanal*\n\n*Ranking de Performance:*\n";
-        db.sort((a,b) => b.nota - a.nota).forEach(d => {
-            texto += `• Área ${d.area}: *${d.nota}%* (Resp: ${d.resp})\n`;
-        });
-        texto += "\n_Favor verificar as pendências no relatório completo._";
-        window.open("https://wa.me" + encodeURIComponent(texto), '_blank');
+    async function compartilharTextoWA() {
+    let texto = "*AUDITORIA FAB. RAÇÕES BSB*\n";
+    texto += "*Relatório Semanal*\n\n";
+    texto += "*Ranking de Performance:*\n";
+    
+    // Organiza por nota (maior para menor)
+    db.sort((a,b) => b.nota - a.nota).forEach(d => {
+        let icone = d.nota >= 70 ? "✅" : "⚠️";
+        if(d.nota === 0) icone = "❌";
+        texto += `${icone} Área ${d.area}: *${d.nota}%* (Resp: ${d.resp})\n`;
+    });
+    
+    texto += "\n_Relatório detalhado gerado pelo sistema interno._";
+
+    // TENTA O COMPARTILHAMENTO NATIVO DO CELULAR (MAIS RÁPIDO E SEGURO)
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'Auditoria Fab. Rações BSB',
+                text: texto
+            });
+        } catch (err) {
+            // Plano B: Link direto se o usuário cancelar o compartilhamento nativo
+            window.open("https://api.whatsapp.com" + encodeURIComponent(texto), '_blank');
+        }
+    } else {
+        // Plano C: Para navegadores antigos
+        window.open("https://api.whatsapp.com" + encodeURIComponent(texto), '_blank');
     }
+}
 </script>
 </body>
 </html>
+
