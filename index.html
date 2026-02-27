@@ -17,7 +17,7 @@
         .btn-foto { background: #6c757d; color: white; border: none; padding: 14px; border-radius: 10px; width: 100%; font-weight: bold; margin: 8px 0; cursor: pointer; }
         .preview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
         .thumb { width: 85px; height: 85px; object-fit: cover; border-radius: 10px; border: 3px solid #004a99; }
-        .btn { width: 100%; padding: 20px; border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 17px; margin: 10px 0; cursor: pointer; }
+        .btn { display: block; width: 100%; padding: 20px; border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 17px; margin: 10px 0; cursor: pointer; text-align: center; text-decoration: none; box-sizing: border-box; }
         .btn-save { background: #004a99; }
         .btn-report { background: #28a745; }
         .btn-wa { background: #25D366; }
@@ -64,7 +64,10 @@
     </div>
     <div id="corpo-ranking"></div>
     <div id="corpo-detalhes"></div>
-    <button class="btn btn-wa no-print" onclick="compartilharWA()">ENVIAR RESUMO WHATSAPP</button>
+    
+    <!-- MUDANÇA AQUI: Link direto para evitar bloqueio do navegador -->
+    <a id="btn-wa-link" href="#" class="btn btn-wa no-print">ENVIAR RESUMO WHATSAPP</a>
+    
     <button class="btn btn-save no-print" onclick="window.print()">SALVAR PDF COMPLETO</button>
     <button class="btn no-print" style="background:#000;" onclick="if(confirm('Zerar todos os dados?')) location.reload()">REINICIAR</button>
 </div>
@@ -156,6 +159,9 @@
 
         alert(`Área ${area} salva! Nota: ${dadosArea.nota}%`);
         document.getElementById('contador').innerText = `Áreas salvas: ${db.length}`;
+        
+        // Atualiza o link do WhatsApp preventivamente
+        atualizarLinkWhatsApp();
     }
 
     function mostrarRelatorio() {
@@ -181,18 +187,19 @@
         });
         document.getElementById('corpo-ranking').innerHTML = ranking + "</table>";
         document.getElementById('corpo-detalhes').innerHTML = detalhes;
+        
+        atualizarLinkWhatsApp();
     }
 
-    function compartilharWA() {
+    function atualizarLinkWhatsApp() {
         if (db.length === 0) return;
         let txt = "*RESUMO VISTORIA SEMANAL RAÇÕES BSB*\n\n";
         db.forEach(d => {
             txt += `Area ${d.area}: ${d.nota}% (${d.resp})\n`;
         });
         
-        // Uso de wa.me com redirecionamento direto
-        const link = "https://wa.me" + encodeURIComponent(txt);
-        window.location.href = link;
+        const btnWa = document.getElementById('btn-wa-link');
+        btnWa.href = "https://wa.me" + encodeURIComponent(txt);
     }
 </script>
 </body>
