@@ -5,26 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Fab. Rações BSB - Auditoria</title>
     <style>
-        body { font-family: -apple-system, sans-serif; padding: 15px; background: #f0f2f5; color: #333; margin: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 15px; background: #f0f2f5; color: #333; margin: 0; }
         .no-print { display: block; }
-        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px; border-radius: 10px; border-top: 5px solid #cc0000; margin-bottom: 15px; }
-        .header img { height: 30px; }
-        .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h3 { color: #cc0000; margin: 0 0 10px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .btn-foto { background: #6c757d; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; margin: 5px 0; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px; border-radius: 12px; border-top: 6px solid #cc0000; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header img { height: 35px; }
+        .card { background: white; padding: 18px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        h3 { color: #cc0000; margin: 0 0 10px 0; border-bottom: 2px solid #f0f2f5; padding-bottom: 8px; font-size: 1.1em; }
+        input, select { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; background: #fafafa; }
+        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .btn-foto { background: #6c757d; color: white; border: none; padding: 14px; border-radius: 10px; width: 100%; font-weight: bold; margin: 8px 0; cursor: pointer; }
         .preview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-        .thumb { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 2px solid #004a99; }
-        .btn { width: 100%; padding: 18px; border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 16px; margin: 10px 0; cursor: pointer; }
+        .thumb { width: 85px; height: 85px; object-fit: cover; border-radius: 10px; border: 3px solid #004a99; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn { width: 100%; padding: 20px; border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 17px; margin: 10px 0; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,0.1); }
         .btn-save { background: #004a99; }
         .btn-report { background: #28a745; }
         .btn-wa { background: #25D366; }
-        #relatorio-view { display: none; background: white; padding: 15px; }
-        .area-box { border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin-bottom: 15px; page-break-inside: avoid; }
-        .foto-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-        .foto-resumo { width: 120px; height: 120px; object-fit: cover; border: 1px solid #ccc; border-radius: 5px; }
-        @media print { .no-print { display: none !important; } #relatorio-view { display: block !important; } }
+        
+        /* Estilo do Relatório Final */
+        #relatorio-view { display: none; background: white; padding: 20px; min-height: 100vh; }
+        .ranking-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; background: #fff; }
+        .ranking-table th, .ranking-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        .ranking-table th { background: #cc0000; color: white; }
+        .area-box { border: 2px solid #eee; border-radius: 12px; padding: 15px; margin-bottom: 25px; page-break-inside: avoid; }
+        .foto-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+        .foto-resumo { width: 140px; height: 140px; object-fit: cover; border-radius: 8px; border: 1px solid #ccc; }
+        
+        @media print { 
+            .no-print { display: none !important; } 
+            #relatorio-view { display: block !important; } 
+            body { background: white; padding: 0; }
+        }
     </style>
 </head>
 <body>
@@ -32,30 +42,39 @@
 <div id="main-ui" class="no-print">
     <div class="header">
         <img src="https://upload.wikimedia.org">
-        <div style="font-weight: bold; font-size: 0.8em; text-align: center;">FAB. RAÇÕES BSB</div>
+        <div style="font-weight: 900; color: #444; font-size: 0.85em; text-align: center; line-height: 1.1;">FAB. RAÇÕES<br>BSB</div>
         <img src="https://upload.wikimedia.org">
     </div>
 
     <div class="card">
-        <h3>Identificação</h3>
-        <select id="area_sel"><option value="">Selecione a Área (1-36)</option><script>for(let i=1;i<=36;i++)document.write(`<option value="${i}">Área ${i}</option>`)</script></select>
+        <h3>1. Identificação</h3>
+        <select id="area_sel">
+            <option value="" disabled selected>Selecione a Área (1-36)</option>
+            <script>for(let i=1;i<=36;i++)document.write(`<option value="${i}">Área ${i}</option>`)</script>
+        </select>
         <input type="text" id="resp" placeholder="Responsável da Área">
         <input type="text" id="aval" placeholder="Nome do Avaliador">
     </div>
 
     <div id="checklist-container"></div>
 
-    <button class="btn btn-save" id="btn-master-save" onclick="salvarArea()">SALVAR ÁREA</button>
-    <button class="btn btn-report" onclick="mostrarRelatorio()">VISUALIZAR RELATÓRIO</button>
+    <button class="btn btn-save" onclick="salvarArea()">SALVAR ÁREA ATUAL</button>
+    <button class="btn btn-report" onclick="mostrarRelatorio()">GERAR RELATÓRIO FINAL</button>
     <p id="contador" style="text-align:center; font-weight:bold; color:#004a99;"></p>
 </div>
 
 <div id="relatorio-view">
-    <h2 style="text-align:center; color:red; border-bottom:2px solid red; padding-bottom: 10px;">AUDITORIA RAÇÕES BSB</h2>
-    <div id="corpo-rel"></div>
-    <button class="btn btn-wa no-print" onclick="compartilharTextoWA()">COMPARTILHAR NO WHATSAPP</button>
-    <button class="btn btn-save no-print" onclick="window.print()">SALVAR PDF (COM FOTOS)</button>
-    <button class="btn no-print" style="background:#888;" onclick="location.reload()">VOLTAR / REINICIAR</button>
+    <div style="text-align:center; border-bottom:4px solid #cc0000; padding-bottom: 15px; margin-bottom: 25px;">
+        <h2 style="margin:0; color:#cc0000; text-transform: uppercase;">Relatório de Auditoria - Fab. Rações BSB</h2>
+        <p style="margin:5px 0; font-weight: bold; color: #666;">Data de Emissão: <span id="data-rel"></span></p>
+    </div>
+
+    <div id="corpo-ranking"></div>
+    <div id="corpo-detalhes"></div>
+
+    <button class="btn btn-wa no-print" onclick="compartilharTextoWA()">ENVIAR RANKING NO WHATSAPP</button>
+    <button class="btn btn-save no-print" onclick="window.print()">SALVAR PDF COMPLETO (FOTOS)</button>
+    <button class="btn no-print" style="background:#888;" onclick="location.reload()">NOVA AUDITORIA / VOLTAR</button>
 </div>
 
 <script>
@@ -72,57 +91,43 @@
                     <span style="${it==='Condição Insegura'?'color:red;font-weight:bold':''}">${it}</span>
                     <input type="checkbox" class="c-check" data-n="${it}">
                 </div>
-                <button class="btn-foto" onclick="acionarInput('${it}')">＋ ADICIONAR FOTO</button>
+                <button class="btn-foto" onclick="document.getElementById('in-${it}').click()">＋ ADICIONAR FOTO</button>
                 <input type="file" id="in-${it}" accept="image/*" capture="camera" style="display:none" onchange="processarFoto('${it}', this)">
                 <div id="pre-${it}" class="preview"></div>
-                <input type="text" class="c-obs" data-n="${it}" placeholder="Obs...">
+                <input type="text" class="c-obs" data-n="${it}" placeholder="Observações e notas...">
             </div>
         `;
     });
 
-    function acionarInput(it) { document.getElementById('in-' + it).click(); }
-
     function processarFoto(it, input) {
-        if (!input.files || !input.files[0]) return;
-        
+        if (!input.files[0]) return;
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
             img.src = e.target.result;
             img.onload = function() {
-                // Redimensionar para manter o app leve
                 const canvas = document.createElement('canvas');
                 const MAX_WIDTH = 800;
-                let width = img.width;
-                let height = img.height;
-
-                if (width > height) {
-                    if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                } else {
-                    if (height > MAX_WIDTH) { width *= MAX_WIDTH / height; height = MAX_WIDTH; }
-                }
+                let width = img.width, height = img.height;
+                if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } }
+                else { if (height > MAX_WIDTH) { width *= MAX_WIDTH / height; height = MAX_WIDTH; } }
                 canvas.width = width; canvas.height = height;
-                const ctx = canvas.getContext("2d");
-                ctx.drawImage(img, 0, 0, width, height);
-                
+                canvas.getContext("2d").drawImage(img, 0, 0, width, height);
                 const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
                 fotosTemp[it].push(dataUrl);
-                
-                // Mostrar ícone (miniatura) na tela
                 const thumb = document.createElement('img');
-                thumb.src = dataUrl;
-                thumb.className = 'thumb';
+                thumb.src = dataUrl; thumb.className = 'thumb';
                 document.getElementById('pre-' + it).appendChild(thumb);
             };
         };
         reader.readAsDataURL(input.files[0]);
-        input.value = ""; // Limpa para permitir outra foto em seguida
+        input.value = "";
     }
 
     function salvarArea() {
         const area = document.getElementById('area_sel').value;
         const resp = document.getElementById('resp').value;
-        if(!area || !resp) return alert("Selecione a área e o responsável!");
+        if(!area || !resp) return alert("Selecione Área e Responsável!");
         
         const dados = { area, resp, aval: document.getElementById('aval').value, nota: 100, detalhes: [] };
         const checks = document.querySelectorAll('.c-check');
@@ -137,16 +142,13 @@
 
         itens.forEach((it, i) => {
             dados.detalhes.push({ nome: it, ok: checks[i].checked, obs: obss[i].value, fotos: [...fotosTemp[it]] });
-            // Limpar campos visuais e temporários
-            checks[i].checked = false;
-            obss[i].value = "";
-            fotosTemp[it] = [];
+            checks[i].checked = false; obss[i].value = ""; fotosTemp[it] = [];
             document.getElementById('pre-' + it).innerHTML = "";
         });
 
         db.push(dados);
-        document.getElementById('contador').innerText = `✅ Áreas Salvas: ${db.length}`;
-        alert("Área " + area + " salva!");
+        document.getElementById('contador').innerText = `✅ Áreas Concluídas: ${db.length}`;
+        alert("Área " + area + " arquivada com sucesso!");
         window.scrollTo(0,0);
     }
 
@@ -154,37 +156,38 @@
         if(db.length === 0) return alert("Salve uma área primeiro!");
         document.getElementById('main-ui').style.display = 'none';
         document.getElementById('relatorio-view').style.display = 'block';
+        document.getElementById('data-rel').innerText = new Date().toLocaleDateString('pt-BR');
 
-        const cont = document.getElementById('corpo-rel');
-        cont.innerHTML = "<h3>Ranking Geral:</h3>";
+        // Gerar Tabela de Ranking
+        const rankingCont = document.getElementById('corpo-ranking');
+        let rankingHtml = `<h3>Ranking de Performance:</h3><table class="ranking-table"><thead><tr><th>Área</th><th>Nota %</th><th>Responsável</th></tr></thead><tbody>`;
         db.sort((a,b) => b.nota - a.nota).forEach(d => {
-            cont.innerHTML += `<p>• Área ${d.area}: <b>${d.nota}%</b> (Resp: ${d.resp})</p>`;
+            rankingHtml += `<tr><td>Área ${d.area}</td><td><b>${d.nota}%</b></td><td>${d.resp}</td></tr>`;
         });
+        rankingCont.innerHTML = rankingHtml + `</tbody></table>`;
 
-        cont.innerHTML += "<hr><h3>Evidências por Área:</h3>";
+        // Gerar Detalhes
+        const detalhesCont = document.getElementById('corpo-detalhes');
+        detalhesCont.innerHTML = "<hr><h3>Evidências e Observações:</h3>";
         db.forEach(d => {
-            let html = `<div class="area-box"><b>ÁREA ${d.area} - NOTA: ${d.nota}%</b><br>`;
+            let html = `<div class="area-box"><b>ÁREA ${d.area} - NOTA: ${d.nota}%</b> (Responsável: ${d.resp})<br>`;
             d.detalhes.forEach(it => {
-                html += `<p style="font-size:13px; margin-bottom: 5px;">${it.ok?'✅':'❌'} <b>${it.nome}</b>: ${it.obs}</p>`;
-                if(it.fotos && it.fotos.length > 0) {
-                    html += `<div class="foto-grid">`;
-                    it.fotos.forEach(f => {
-                        html += `<img src="${f}" class="foto-resumo">`;
-                    });
-                    html += `</div>`;
+                html += `<p style="font-size:13px; margin: 8px 0;">${it.ok?'✅':'❌'} <b>${it.nome}</b>: ${it.obs || 'Sem observações'}</p>`;
+                if(it.fotos.length > 0) {
+                    html += `<div class="foto-grid">` + it.fotos.map(f => `<img src="${f}" class="foto-resumo">`).join('') + `</div>`;
                 }
             });
-            cont.innerHTML += html + `</div>`;
+            detalhesCont.innerHTML += html + `</div>`;
         });
     }
 
     function compartilharTextoWA() {
-        let texto = "*AUDITORIA FAB. RAÇÕES BSB*\n\n*Ranking de Performance:*\n";
+        let texto = "*AUDITORIA FAB. RAÇÕES BSB*\n*Relatório Semanal*\n\n*Ranking de Performance:*\n";
         db.sort((a,b) => b.nota - a.nota).forEach(d => {
             texto += `• Área ${d.area}: *${d.nota}%* (Resp: ${d.resp})\n`;
         });
-        const url = "https://wa.me" + encodeURIComponent(texto);
-        window.open(url, '_blank');
+        texto += "\n_Favor verificar as pendências no relatório completo._";
+        window.open("https://wa.me" + encodeURIComponent(texto), '_blank');
     }
 </script>
 </body>
