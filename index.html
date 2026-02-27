@@ -180,7 +180,12 @@
     async function compartilharWA() {
     if (db.length === 0) return alert("Salve uma área primeiro!");
 
+    // Pega o nome do avaliador do último registro salvo
+    const ultimoAvaliador = db[db.length - 1].aval || "Não informado";
+    const dataAtual = new Date().toLocaleDateString('pt-BR');
+
     let txt = "*📋 AUDITORIA FAB. RAÇÕES BSB*\n";
+    txt += `*Data:* ${dataAtual}\n`;
     txt += "----------------------------------\n\n";
     
     txt += "*🏆 RANKING DE PERFORMANCE:*\n";
@@ -193,7 +198,7 @@
 
     txt += "\n*🔍 DETALHAMENTO DE PENDÊNCIAS:*\n";
     db.forEach(d => {
-        // Filtra apenas os itens que tiveram problemas (marcados)
+        // Filtra apenas os itens que tiveram problemas (marcados como irregular)
         const pendencias = d.detalhes.filter(it => it.irregular);
         
         if (pendencias.length > 0) {
@@ -202,14 +207,15 @@
                 txt += `• ${p.nome}: _${p.obs || "Sem observação"}_\n`;
             });
         } else {
-            txt += `\n*Área ${d.area}*: Sem pendências detectadas. ✨\n`;
+            txt += `\n*Área ${d.area}*: Sem pendências. ✨\n`;
         }
     });
 
     txt += "\n----------------------------------\n";
+    txt += `*✍️ Avaliador:* ${ultimoAvaliador}\n`;
     txt += "_Relatório completo com fotos disponível no PDF oficial._";
 
-    // Tenta usar o compartilhamento nativo do celular (iPhone/Android)
+    // Executa o compartilhamento nativo do smartphone
     if (navigator.share) {
         try {
             await navigator.share({
@@ -217,15 +223,16 @@
                 text: txt
             });
         } catch (e) {
-            // Plano B caso o usuário cancele ou dê erro
+            // Caso o usuário cancele ou o navegador bloqueie a API
             window.open("https://wa.me" + encodeURIComponent(txt), '_blank');
         }
     } else {
-        // Plano C para navegadores que não suportam Share API
+        // Fallback para navegadores sem suporte a Share API
         window.open("https://wa.me" + encodeURIComponent(txt), '_blank');
     }
 }
 </script>
 </body>
 </html>
+
 
