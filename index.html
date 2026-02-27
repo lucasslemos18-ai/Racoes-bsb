@@ -35,10 +35,8 @@
 
 <div id="main-ui" class="no-print">
     <div class="header">
-        <!-- Logo JBS Base64 -->
         <img src="https://logodownload.org" alt="JBS">
         <div style="font-weight: 900; color: #444; font-size: 0.8em; text-align: center; line-height: 1.1;">VISTORIA SEMANAL<br>FAB. RAÇÕES BSB</div>
-        <!-- Logo Seara Base64 -->
         <img src="https://logodownload.org" alt="Seara">
     </div>
 
@@ -46,7 +44,7 @@
         <h3>1. Identificação</h3>
         <select id="area_sel">
             <option value="" disabled selected>Selecione a Área (1-36)</option>
-            <script>for(let i=1;i<=36;i++)document.write(`<option value="${i}">Área ${i}</option>`)</script>
+            <script>for(let i=1;i<=36;i++)document.write(`<option value="${i}">Área ${i}</option>`);</script>
         </select>
         <input type="text" id="resp" placeholder="Responsável da Área">
         <input type="text" id="aval" placeholder="Nome do Avaliador">
@@ -72,7 +70,8 @@
 </div>
 
 <script>
-    const itens = ["Estruturas", "Elétrica", "Equipamentos", "Maquinas", "Limpeza", "Condição Insegura"];
+    // Tópicos atualizados conforme solicitado
+    const itens = ["Estruturas", "Elétrica", "Equipamentos", "Organização 5S", "Condição Insegura"];
     const db = [];
     let fotosTemp = {};
 
@@ -134,7 +133,8 @@
         } else {
             let penalidade = 0;
             checks.forEach(c => {
-                if(c.checked && c.dataset.n !== "Condição Insegura") penalidade += 20;
+                // Agora divide 100 por 4 itens (25 pontos cada falha)
+                if(c.checked && c.dataset.n !== "Condição Insegura") penalidade += 25;
             });
             notaCalculada = 100 - penalidade;
         }
@@ -191,7 +191,7 @@
         txt += "*🏆 RANKING DE PERFORMANCE:*\n";
         const ranking = [...db].sort((a,b) => b.nota - a.nota);
         ranking.forEach(d => {
-            let icone = d.nota >= 80 ? "✅" : (d.nota === 0 ? "❌" : "⚠️");
+            let icone = d.nota >= 75 ? "✅" : (d.nota === 0 ? "❌" : "⚠️");
             txt += `${icone} Área ${d.area}: *${d.nota}%* (Resp: ${d.resp})\n`;
         });
 
@@ -212,9 +212,9 @@
 
         if (navigator.share) {
             try { await navigator.share({ title: 'Vistoria BSB', text: txt }); } 
-            catch (e) { window.open("https://api.whatsapp.com" + encodeURIComponent(txt), '_blank'); }
+            catch (e) { window.open("https://wa.me" + encodeURIComponent(txt), '_blank'); }
         } else {
-            window.open("https://api.whatsapp.com" + encodeURIComponent(txt), '_blank');
+            window.open("https://wa.me" + encodeURIComponent(txt), '_blank');
         }
     }
 </script>
