@@ -8,7 +8,7 @@
         body { font-family: -apple-system, system-ui, sans-serif; padding: 15px; background: #f0f2f5; color: #333; margin: 0; }
         .no-print { display: block; }
         .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px; border-radius: 12px; border-top: 6px solid #cc0000; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .header img { height: 35px; }
+        .header img { height: 35px; width: auto; max-width: 100px; object-fit: contain; }
         .card { background: white; padding: 18px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         h3 { color: #cc0000; margin: 0 0 10px 0; border-bottom: 2px solid #f0f2f5; padding-bottom: 8px; font-size: 1.1em; }
         input, select { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; background: #fafafa; }
@@ -35,9 +35,11 @@
 
 <div id="main-ui" class="no-print">
     <div class="header">
-        <img src="https://upload.wikimedia.org">
+        <!-- Logo JBS Base64 -->
+        <img src="https://logodownload.org" alt="JBS">
         <div style="font-weight: 900; color: #444; font-size: 0.8em; text-align: center; line-height: 1.1;">VISTORIA SEMANAL<br>FAB. RAÇÕES BSB</div>
-        <img src="https://upload.wikimedia.org">
+        <!-- Logo Seara Base64 -->
+        <img src="https://logodownload.org" alt="Seara">
     </div>
 
     <div class="card">
@@ -210,9 +212,9 @@
 
         if (navigator.share) {
             try { await navigator.share({ title: 'Vistoria BSB', text: txt }); } 
-            catch (e) { window.open("https://wa.me" + encodeURIComponent(txt), '_blank'); }
+            catch (e) { window.open("https://api.whatsapp.com" + encodeURIComponent(txt), '_blank'); }
         } else {
-            window.open("https://wa.me" + encodeURIComponent(txt), '_blank');
+            window.open("https://api.whatsapp.com" + encodeURIComponent(txt), '_blank');
         }
     }
 </script>
