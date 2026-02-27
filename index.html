@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fab. Rações BSB - Auditoria</title>
+    <title>Vistoria Semanal Fab. Rações BSB</title>
     <style>
         body { font-family: -apple-system, system-ui, sans-serif; padding: 15px; background: #f0f2f5; color: #333; margin: 0; }
         .no-print { display: block; }
-        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 12px; border-top: 6px solid #cc0000; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .header img { height: 32px; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px; border-radius: 12px; border-top: 6px solid #cc0000; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header img { height: 35px; }
         .card { background: white; padding: 18px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         h3 { color: #cc0000; margin: 0 0 10px 0; border-bottom: 2px solid #f0f2f5; padding-bottom: 8px; font-size: 1.1em; }
         input, select { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; background: #fafafa; }
@@ -20,6 +20,7 @@
         .btn { width: 100%; padding: 20px; border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 17px; margin: 10px 0; cursor: pointer; }
         .btn-save { background: #004a99; }
         .btn-report { background: #28a745; }
+        .btn-wa { background: #25D366; }
         #relatorio-view { display: none; background: white; padding: 20px; min-height: 100vh; }
         .ranking-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
         .ranking-table th, .ranking-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
@@ -35,7 +36,7 @@
 <div id="main-ui" class="no-print">
     <div class="header">
         <img src="https://upload.wikimedia.org">
-        <div style="font-weight: 900; color: #444; font-size: 0.85em; text-align: center; line-height: 1.1;">FAB. RAÇÕES<br>BSB</div>
+        <div style="font-weight: 900; color: #444; font-size: 0.8em; text-align: center; line-height: 1.1;">VISTORIA SEMANAL<br>FAB. RAÇÕES BSB</div>
         <img src="https://upload.wikimedia.org">
     </div>
 
@@ -57,12 +58,15 @@
 </div>
 
 <div id="relatorio-view">
-    <h2 style="text-align:center; color:red; border-bottom:4px solid #cc0000; padding-bottom: 15px;">AUDITORIA RAÇÕES BSB</h2>
+    <div style="text-align:center; border-bottom:4px solid #cc0000; padding-bottom: 15px; margin-bottom: 25px;">
+        <h2 style="margin:0; color:#cc0000; text-transform: uppercase;">Vistoria Semanal Fab. Rações BSB</h2>
+        <p style="margin:5px 0; font-weight: bold; color: #666;">Emissão: <span id="data-rel"></span></p>
+    </div>
     <div id="corpo-ranking"></div>
     <div id="corpo-detalhes"></div>
-    <button class="btn btn-report no-print" onclick="compartilharWA()">COMPARTILHAR NO WHATSAPP</button>
-    <button class="btn btn-save no-print" onclick="window.print()">SALVAR PDF (COM FOTOS)</button>
-    <button class="btn no-print" style="background:#000;" onclick="location.reload()">NOVA AUDITORIA</button>
+    <button class="btn btn-wa no-print" onclick="compartilharWA()">ENVIAR RESUMO NO WHATSAPP</button>
+    <button class="btn btn-save no-print" onclick="window.print()">SALVAR PDF COMPLETO (COM FOTOS)</button>
+    <button class="btn no-print" style="background:#000;" onclick="if(confirm('Zerar todos os dados?')) location.reload()">LIMPAR TUDO / REINICIAR</button>
 </div>
 
 <script>
@@ -79,7 +83,7 @@
                     <span style="${it==='Condição Insegura' ? 'color:red;font-weight:bold' : ''}">${it}</span>
                     <input type="checkbox" class="c-check" data-n="${it}">
                 </div>
-                <p class="instrucao">MARQUE SE TIVER PROBLEMASn (Reduz nota)</p>
+                <p class="instrucao">MARQUE SE TIVER PROBLEMAS (Reduz nota)</p>
                 <button class="btn-foto" onclick="document.getElementById('in-${it}').click()">＋ ADICIONAR FOTO</button>
                 <input type="file" id="in-${it}" accept="image/*" capture="camera" style="display:none" onchange="processarFoto('${it}', this)">
                 <div id="pre-${it}" class="preview"></div>
@@ -88,7 +92,7 @@
     });
 
     function processarFoto(it, input) {
-        if (!input.files[0]) return;
+        if (!input.files) return;
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
@@ -108,35 +112,30 @@
                 document.getElementById('pre-' + it).appendChild(thumb);
             };
         };
-        reader.readAsDataURL(input.files[0]);
+        reader.readAsDataURL(input.files);
     }
 
     function salvarArea() {
         const area = document.getElementById('area_sel').value;
         const resp = document.getElementById('resp').value;
+        const aval = document.getElementById('aval').value;
         if(!area || !resp) return alert("Preencha Identificação!");
         
         let notaCalculada = 100;
-        const dados = { area, resp, aval: document.getElementById('aval').value, data: new Date().toLocaleString(), detalhes: [] };
-        
+        const dados = { area, resp, aval, data: new Date().toLocaleString(), detalhes: [] };
         const checks = document.querySelectorAll('.c-check');
         const obss = document.querySelectorAll('.c-obs');
         
         const isInseguro = document.querySelector('.c-check[data-n="Condição Insegura"]').checked;
-        
         if(isInseguro) {
             notaCalculada = 0;
         } else {
             let penalidade = 0;
             checks.forEach(c => {
-                // Se o item estiver marcado e NÃO for a condição insegura, soma 20 de penalidade
-                if(c.checked && c.dataset.n !== "Condição Insegura") {
-                    penalidade += 20;
-                }
+                if(c.checked && c.dataset.n !== "Condição Insegura") penalidade += 20;
             });
             notaCalculada = 100 - penalidade;
         }
-        
         dados.nota = Math.max(0, notaCalculada);
 
         itens.forEach((it, i) => {
@@ -155,6 +154,7 @@
         if(db.length === 0) return alert("Salve uma área!");
         document.getElementById('main-ui').style.display = 'none';
         document.getElementById('relatorio-view').style.display = 'block';
+        document.getElementById('data-rel').innerText = new Date().toLocaleDateString('pt-BR');
         
         const rankingCont = document.getElementById('corpo-ranking');
         let rHtml = `<table class="ranking-table"><thead><tr><th>Área</th><th>Nota %</th><th>Responsável</th></tr></thead><tbody>`;
@@ -178,61 +178,43 @@
     }
 
     async function compartilharWA() {
-    if (db.length === 0) return alert("Salve uma área primeiro!");
+        if (db.length === 0) return alert("Salve uma área primeiro!");
+        const ultimoAvaliador = db[db.length - 1].aval || "Não informado";
+        const dataAtual = new Date().toLocaleDateString('pt-BR');
 
-    // Pega o nome do avaliador do último registro salvo
-    const ultimoAvaliador = db[db.length - 1].aval || "Não informado";
-    const dataAtual = new Date().toLocaleDateString('pt-BR');
-
-    let txt = "*📋 AUDITORIA FAB. RAÇÕES BSB*\n";
-    txt += `*Data:* ${dataAtual}\n`;
-    txt += "----------------------------------\n\n";
-    
-    txt += "*🏆 RANKING DE PERFORMANCE:*\n";
-    // Ordena do melhor para o pior
-    const ranking = [...db].sort((a,b) => b.nota - a.nota);
-    ranking.forEach(d => {
-        let icone = d.nota >= 80 ? "✅" : (d.nota === 0 ? "❌" : "⚠️");
-        txt += `${icone} Área ${d.area}: *${d.nota}%* (Resp: ${d.resp})\n`;
-    });
-
-    txt += "\n*🔍 DETALHAMENTO DE PENDÊNCIAS:*\n";
-    db.forEach(d => {
-        // Filtra apenas os itens que tiveram problemas (marcados como irregular)
-        const pendencias = d.detalhes.filter(it => it.irregular);
+        let txt = "*📋 VISTORIA SEMANAL FAB. RAÇÕES BSB*\n";
+        txt += `*Data:* ${dataAtual}\n`;
+        txt += "----------------------------------\n\n";
         
-        if (pendencias.length > 0) {
-            txt += `\n*Área ${d.area}* (Nota: ${d.nota}%)\n`;
-            pendencias.forEach(p => {
-                txt += `• ${p.nome}: _${p.obs || "Sem observação"}_\n`;
-            });
+        txt += "*🏆 RANKING DE PERFORMANCE:*\n";
+        const ranking = [...db].sort((a,b) => b.nota - a.nota);
+        ranking.forEach(d => {
+            let icone = d.nota >= 80 ? "✅" : (d.nota === 0 ? "❌" : "⚠️");
+            txt += `${icone} Área ${d.area}: *${d.nota}%* (Resp: ${d.resp})\n`;
+        });
+
+        txt += "\n*🔍 DETALHAMENTO DE PENDÊNCIAS:*\n";
+        db.forEach(d => {
+            const pendencias = d.detalhes.filter(it => it.irregular);
+            if (pendencias.length > 0) {
+                txt += `\n*Área ${d.area}* (Nota: ${d.nota}%)\n`;
+                pendencias.forEach(p => { txt += `• ${p.nome}: _${p.obs || "Sem obs"}_\n`; });
+            } else {
+                txt += `\n*Área ${d.area}*: Sem pendências. ✨\n`;
+            }
+        });
+
+        txt += "\n----------------------------------\n";
+        txt += `*✍️ Avaliador:* ${ultimoAvaliador}\n`;
+        txt += "_Relatório completo com fotos no PDF oficial._";
+
+        if (navigator.share) {
+            try { await navigator.share({ title: 'Vistoria BSB', text: txt }); } 
+            catch (e) { window.open("https://wa.me" + encodeURIComponent(txt), '_blank'); }
         } else {
-            txt += `\n*Área ${d.area}*: Sem pendências. ✨\n`;
-        }
-    });
-
-    txt += "\n----------------------------------\n";
-    txt += `*✍️ Avaliador:* ${ultimoAvaliador}\n`;
-    txt += "_Relatório completo com fotos disponível no PDF oficial._";
-
-    // Executa o compartilhamento nativo do smartphone
-    if (navigator.share) {
-        try {
-            await navigator.share({
-                title: 'Auditoria BSB',
-                text: txt
-            });
-        } catch (e) {
-            // Caso o usuário cancele ou o navegador bloqueie a API
             window.open("https://wa.me" + encodeURIComponent(txt), '_blank');
         }
-    } else {
-        // Fallback para navegadores sem suporte a Share API
-        window.open("https://wa.me" + encodeURIComponent(txt), '_blank');
     }
-}
 </script>
 </body>
 </html>
-
-
