@@ -13,6 +13,7 @@
         h3 { color: #cc0000; margin: 0 0 10px 0; border-bottom: 2px solid #f0f2f5; padding-bottom: 8px; font-size: 1.1em; }
         input, select { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; background: #fafafa; }
         .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .instrucao { font-size: 12px; color: #666; margin-bottom: 10px; font-style: italic; }
         .btn-foto { background: #6c757d; color: white; border: none; padding: 14px; border-radius: 10px; width: 100%; font-weight: bold; margin: 8px 0; cursor: pointer; }
         .preview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
         .thumb { width: 85px; height: 85px; object-fit: cover; border-radius: 10px; border: 3px solid #004a99; }
@@ -58,15 +59,14 @@
 
 <div id="relatorio-view">
     <div style="text-align:center; border-bottom:4px solid #cc0000; padding-bottom: 15px; margin-bottom: 25px;">
-        <h2 style="margin:0; color:#cc0000; text-transform: uppercase;">Relatório de Auditoria - Fab. Rações BSB</h2>
+        <h2 style="margin:0; color:#cc0000;">AUDITORIA - FAB. RAÇÕES BSB</h2>
         <p style="margin:5px 0; font-weight: bold; color: #666;">Emissão: <span id="data-rel"></span></p>
     </div>
     <div id="corpo-ranking"></div>
     <div id="corpo-detalhes"></div>
     <button class="btn btn-wa no-print" onclick="compartilharWA()">ENVIAR RANKING NO WHATSAPP</button>
     <button class="btn btn-save no-print" onclick="window.print()">SALVAR PDF COMPLETO</button>
-    <button class="btn no-print" style="background:#6c757d;" onclick="location.reload()">VOLTAR / EDITAR</button>
-    <button class="btn no-print" style="background:#000;" onclick="if(confirm('Zerar todas as notas e fotos salvas?')) location.href=location.href">LIMPAR TUDO / REINICIAR</button>
+    <button class="btn no-print" style="background:#000;" onclick="if(confirm('Zerar todas as notas e fotos salvas?')) location.reload()">LIMPAR TUDO / REINICIAR</button>
 </div>
 
 <script>
@@ -83,10 +83,11 @@
                     <span style="${it==='Condição Insegura'?'color:red;font-weight:bold':''}">${it}</span>
                     <input type="checkbox" class="c-check" data-n="${it}">
                 </div>
+                <p class="instrucao">Marque o box acima apenas se houver irregularidade (reduz 20%)</p>
                 <button class="btn-foto" onclick="document.getElementById('in-${it}').click()">＋ ADICIONAR FOTO</button>
                 <input type="file" id="in-${it}" accept="image/*" capture="camera" style="display:none" onchange="processarFoto('${it}', this)">
                 <div id="pre-${it}" class="preview"></div>
-                <input type="text" class="c-obs" data-n="${it}" placeholder="Obs...">
+                <input type="text" class="c-obs" data-n="${it}" placeholder="Descreva o problema encontrado...">
             </div>`;
     });
 
@@ -119,20 +120,36 @@
         const area = document.getElementById('area_sel').value;
         const resp = document.getElementById('resp').value;
         if(!area || !resp) return alert("Selecione Área e Responsável!");
+        
         const dados = { area, resp, aval: document.getElementById('aval').value, nota: 100, data: new Date().toLocaleString('pt-BR'), detalhes: [] };
         const checks = document.querySelectorAll('.c-check');
         const obss = document.querySelectorAll('.c-obs');
-        if(document.querySelector('.c-check[data-n="Condição Insegura"]').checked) { dados.nota = 0; }
-        else { checks.forEach(c => { if(c.dataset.n !== "Condição Insegura" && !c.checked) dados.nota -= 20; }); }
-        dados.nota = Math.max(0, Math.round(dados.nota));
+        
+        // NOVA LÓGICA DE PONTUAÇÃO
+        const isInseguro = document.querySelector('.c-check[data-n="Condição Insegura"]').checked;
+        
+        if(isInseguro) {
+            dados.nota = 0; // Se marcar condição insegura, zera tudo.
+        } else {
+            // Cada item marcado (exceto o último) reduz 20 pontos dos 100 iniciais
+            checks.forEach((c, idx) => { 
+                if(c.dataset.n !== "Condição Insegura" && c.checked) {
+                    dados.nota -= 20; 
+                }
+            });
+        }
+        
+        dados.nota = Math.max(0, dados.nota);
+
         itens.forEach((it, i) => {
-            dados.detalhes.push({ nome: it, ok: checks[i].checked, obs: obss[i].value, fotos: [...fotosTemp[it]] });
+            dados.detalhes.push({ nome: it, irregular: checks[i].checked, obs: obss[i].value, fotos: [...fotosTemp[it]] });
             checks[i].checked = false; obss[i].value = ""; fotosTemp[it] = [];
             document.getElementById('pre-' + it).innerHTML = "";
         });
+
         db.push(dados);
         document.getElementById('contador').innerText = `✅ Áreas Concluídas: ${db.length}`;
-        alert("Área " + area + " salva!");
+        alert("Área " + area + " salva com nota " + dados.nota + "%");
         window.scrollTo(0,0);
     }
 
@@ -141,17 +158,21 @@
         document.getElementById('main-ui').style.display = 'none';
         document.getElementById('relatorio-view').style.display = 'block';
         document.getElementById('data-rel').innerText = new Date().toLocaleDateString('pt-BR');
+        
         const rankingCont = document.getElementById('corpo-ranking');
         let rHtml = `<h3>Ranking:</h3><table class="ranking-table"><thead><tr><th>Área</th><th>Nota %</th><th>Resp.</th></tr></thead><tbody>`;
         db.sort((a,b) => b.nota - a.nota).forEach(d => { rHtml += `<tr><td>Área ${d.area}</td><td><b>${d.nota}%</b></td><td>${d.resp}</td></tr>`; });
         rankingCont.innerHTML = rHtml + `</tbody></table>`;
+
         const detCont = document.getElementById('corpo-detalhes');
-        detCont.innerHTML = "<hr><h3>Detalhes:</h3>";
+        detCont.innerHTML = "<hr><h3>Detalhamento de Irregularidades:</h3>";
         db.forEach(d => {
             let h = `<div class="area-box"><b>ÁREA ${d.area} - NOTA: ${d.nota}%</b> (Resp: ${d.resp})<br>`;
             d.detalhes.forEach(it => {
-                h += `<p style="font-size:13px; margin: 8px 0;">${it.ok?'✅':'❌'} <b>${it.nome}</b>: ${it.obs || 'Sem obs'}</p>`;
-                if(it.fotos.length > 0) { h += `<div class="foto-grid">` + it.fotos.map(f => `<img src="${f}" class="foto-resumo">`).join('') + `</div>`; }
+                if(it.irregular) {
+                    h += `<p style="font-size:13px; margin: 8px 0;">❌ <b>${it.nome}</b>: ${it.obs || 'Sem observações'}</p>`;
+                    if(it.fotos.length > 0) { h += `<div class="foto-grid">` + it.fotos.map(f => `<img src="${f}" class="foto-resumo">`).join('') + `</div>`; }
+                }
             });
             detCont.innerHTML += h + `</div>`;
         });
@@ -160,14 +181,13 @@
     async function compartilharWA() {
         let txt = "*AUDITORIA FAB. RAÇÕES BSB*\n\n*Ranking de Performance:*\n";
         db.sort((a,b) => b.nota - a.nota).forEach(d => {
-            let i = d.nota >= 70 ? "✅" : (d.nota === 0 ? "❌" : "⚠️");
+            let i = d.nota >= 80 ? "✅" : (d.nota === 0 ? "❌" : "⚠️");
             txt += `${i} Área ${d.area}: *${d.nota}%* (Resp: ${d.resp})\n`;
         });
-        txt += "\n_Favor verificar irregularidades no relatório detalhado._";
         if (navigator.share) {
             try { await navigator.share({ title: 'Auditoria BSB', text: txt }); } 
-            catch (e) { window.open("https://api.whatsapp.com" + encodeURIComponent(txt), '_blank'); }
-        } else { window.open("https://api.whatsapp.com" + encodeURIComponent(txt), '_blank'); }
+            catch (e) { window.open("https://wa.me" + encodeURIComponent(txt), '_blank'); }
+        } else { window.open("https://wa.me" + encodeURIComponent(txt), '_blank'); }
     }
 </script>
 </body>
