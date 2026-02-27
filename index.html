@@ -116,69 +116,98 @@
         reader.readAsDataURL(input.files);
     }
 
-    function salvarArea() {
-        const area = document.getElementById('area_sel').value;
-        const resp = document.getElementById('resp').value;
-        const aval = document.getElementById('aval').value;
-        if(!area || !resp) return alert("Preencha Identificação!");
-        
-        let notaCalculada = 100;
-        const dados = { area, resp, aval, data: new Date().toLocaleString(), detalhes: [] };
-        const checks = document.querySelectorAll('.c-check');
-        const obss = document.querySelectorAll('.c-obs');
-        
-        const isInseguro = document.querySelector('.c-check[data-n="Condição Insegura"]').checked;
-        if(isInseguro) {
-            notaCalculada = 0;
-        } else {
-            let penalidade = 0;
-            checks.forEach(c => {
-                // Agora divide 100 por 4 itens (25 pontos cada falha)
-                if(c.checked && c.dataset.n !== "Condição Insegura") penalidade += 25;
+function salvarArea() {
+    const area = document.getElementById('area_sel').value;
+    const resp = document.getElementById('resp').value;
+    const aval = document.getElementById('aval').value;
+    if(!area || !resp) return alert("Preencha Área e Responsável!");
+    
+    let notaCalculada = 100;
+    const checks = document.querySelectorAll('.c-check');
+    const obss = document.querySelectorAll('.c-obs');
+    
+    const dadosArea = { 
+        area, resp, aval, 
+        data: new Date().toLocaleString(), 
+        itensRelatados: [] 
+    };
+
+    checks.forEach((c, index) => {
+        const nomeItem = c.dataset.n;
+        if(c.checked) {
+            if(nomeItem === "Condição Insegura") notaCalculada = 0;
+            else notaCalculada -= 25;
+
+            // Salva o item, a observação e COPIA as fotos do temporário
+            dadosArea.itensRelatados.push({
+                nome: nomeItem,
+                obs: obss[index].value,
+                fotos: [...fotosTemp[nomeItem]] // Faz uma cópia das fotos
             });
-            notaCalculada = 100 - penalidade;
         }
-        dados.nota = Math.max(0, notaCalculada);
+    });
 
-        itens.forEach((it, i) => {
-            dados.detalhes.push({ nome: it, irregular: checks[i].checked, obs: obss[i].value, fotos: [...fotosTemp[it]] });
-            checks[i].checked = false; obss[i].value = ""; fotosTemp[it] = [];
-            document.getElementById('pre-' + it).innerHTML = "";
-        });
+    dadosArea.nota = notaCalculada < 0 ? 0 : notaCalculada;
+    db.push(dadosArea);
 
-        db.push(dados);
-        document.getElementById('contador').innerText = `✅ Áreas Salvas: ${db.length}`;
-        alert(`Área ${area} salva! Nota: ${dados.nota}%`);
-        window.scrollTo(0,0);
-    }
+    // Limpa o formulário para a próxima área
+    document.getElementById('area_sel').value = "";
+    document.getElementById('resp').value = "";
+    checks.forEach(c => c.checked = false);
+    obss.forEach(o => o.value = "");
+    itens.forEach(it => {
+        fotosTemp[it] = []; // Limpa fotos temporárias
+        document.getElementById('pre-' + it).innerHTML = ""; // Limpa visualmente
+    });
+
+    alert("Área " + area + " salva com sucesso!");
+    document.getElementById('contador').innerText = `Áreas salvas: ${db.length}`;
+}
+
 
     function mostrarRelatorio() {
-        if(db.length === 0) return alert("Salve uma área!");
-        document.getElementById('main-ui').style.display = 'none';
-        document.getElementById('relatorio-view').style.display = 'block';
-        document.getElementById('data-rel').innerText = new Date().toLocaleDateString('pt-BR');
+    if(db.length === 0) return alert("Nenhuma área salva!");
+    
+    document.getElementById('main-ui').style.display = 'none';
+    document.getElementById('relatorio-view').style.display = 'block';
+    document.getElementById('data-rel').innerText = new Date().toLocaleDateString();
+
+    let htmlRanking = `<table class="ranking-table"><tr><th>Área</th><th>Responsável</th><th>Nota</th></tr>`;
+    let htmlDetalhes = "";
+
+    // Ordenar por nota (opcional)
+    db.sort((a, b) => a.nota - b.nota);
+
+    db.forEach(d => {
+        htmlRanking += `<tr><td>${d.area}</td><td>${d.resp}</td><td>${d.nota}%</td></tr>`;
         
-        const rankingCont = document.getElementById('corpo-ranking');
-        let rHtml = `<table class="ranking-table"><thead><tr><th>Área</th><th>Nota %</th><th>Responsável</th></tr></thead><tbody>`;
-        db.sort((a,b) => b.nota - a.nota).forEach(d => { 
-            rHtml += `<tr><td>Área ${d.area}</td><td><b>${d.nota}%</b></td><td>${d.resp}</td></tr>`; 
-        });
-        rankingCont.innerHTML = rHtml + `</tbody></table>`;
-
-        const detCont = document.getElementById('corpo-detalhes');
-        detCont.innerHTML = "<h3>Evidências das Irregularidades:</h3>";
-        db.forEach(d => {
-            let h = `<div class="area-box"><b>ÁREA ${d.area} - NOTA: ${d.nota}%</b><br>`;
-            d.detalhes.forEach(it => {
-                if(it.irregular) {
-                    h += `<p style="font-size:13px; margin: 8px 0;">❌ <b>${it.nome}</b>: ${it.obs}</p>`;
-                    if(it.fotos.length > 0) { h += `<div class="foto-grid">` + it.fotos.map(f => `<img src="${f}" class="foto-resumo">`).join('') + `</div>`; }
-                }
+        htmlDetalhes += `
+            <div class="area-box">
+                <h3 style="background:#eee; padding:5px;">Área: ${d.area} - Resp: ${d.resp} (Nota: ${d.nota}%)</h3>
+                <p>Avaliador: ${d.aval} em ${d.data}</p>`;
+        
+        d.itensRelatados.forEach(item => {
+            htmlDetalhes += `
+                <div style="margin-top:10px; border-top:1px solid #eee;">
+                    <strong>Item: ${item.nome}</strong><br>
+                    <span>Obs: ${item.obs || 'Sem observação'}</span>
+                    <div class="foto-grid">`;
+            
+            // Loop para exibir as fotos de cada item
+            item.fotos.forEach(f => {
+                htmlDetalhes += `<img src="${f}" class="foto-resumo">`;
             });
-            detCont.innerHTML += h + `</div>`;
-        });
-    }
 
+            htmlDetalhes += `</div></div>`;
+        });
+        
+        htmlDetalhes += `</div>`;
+    });
+
+    htmlRanking += "</table>";
+    document.getElementById('corpo-ranking').innerHTML = htmlRanking;
+    document.getElementById('corpo-detalhes').innerHTML = htmlDetalhes;
+}
     async function compartilharWA() {
         if (db.length === 0) return alert("Salve uma área primeiro!");
         const ultimoAvaliador = db[db.length - 1].aval || "Não informado";
@@ -220,3 +249,4 @@
 </script>
 </body>
 </html>
+
