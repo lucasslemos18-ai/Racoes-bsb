@@ -59,7 +59,7 @@
 
 <div id="relatorio-view">
     <div style="text-align:center; border-bottom:4px solid #cc0000; padding-bottom: 15px; margin-bottom: 25px;">
-        <h2 style="margin:0; color:#cc0000; text-transform: uppercase;">Vistoria Semanal Fab. Rações BSB</h2>
+        <h2 style="margin:0; color:#cc0000; text-transform: uppercase;">Relatório de Vistoria Semanal</h2>
         <p style="margin:5px 0; font-weight: bold; color: #666;">Emissão: <span id="data-rel"></span></p>
     </div>
     <div id="corpo-ranking"></div>
@@ -87,7 +87,7 @@
                     <span style="${it==='Condição Insegura' ? 'color:red;font-weight:bold' : ''}">${it}</span>
                     <input type="checkbox" class="c-check" data-n="${it}">
                 </div>
-                <p class="instrucao">MARQUE SE TIVER PROBLEMAS (Reduz nota)</p>
+                <p class="instrucao">MARQUE SE TIVER PROBLEMAS (-10% na nota)</p>
                 <button class="btn-foto" onclick="document.getElementById('in-${it}').click()">＋ ADICIONAR FOTO</button>
                 <input type="file" id="in-${it}" accept="image/*" capture="camera" style="display:none" onchange="processarFoto('${it}', this)">
                 <div id="pre-${it}" class="preview"></div>
@@ -138,11 +138,17 @@
             itensRelatados: [] 
         };
 
+        let possuiInsegura = false;
+        let penalidadeComum = 0;
+
         checks.forEach((c, index) => {
             const nomeItem = c.dataset.n;
             if(c.checked) {
-                if(nomeItem === "Condição Insegura") notaCalculada = 0;
-                else notaCalculada -= 25;
+                if(nomeItem === "Condição Insegura") {
+                    possuiInsegura = true;
+                } else {
+                    penalidadeComum += 10; // Cada tópico comum perde 10%
+                }
 
                 dadosArea.itensRelatados.push({
                     nome: nomeItem,
@@ -152,10 +158,17 @@
             }
         });
 
+        // Lógica de nota: Condição Insegura mata a nota (0). Caso contrário, subtrai os 10% de cada item.
+        if(possuiInsegura) {
+            notaCalculada = 0;
+        } else {
+            notaCalculada = 100 - penalidadeComum;
+        }
+
         dadosArea.nota = notaCalculada < 0 ? 0 : notaCalculada;
         db.push(dadosArea);
 
-        // Limpeza
+        // Reset
         document.getElementById('area_sel').value = "";
         document.getElementById('resp').value = "";
         checks.forEach(c => c.checked = false);
@@ -165,7 +178,7 @@
         });
         initFotos();
 
-        alert("Área " + area + " salva!");
+        alert(`Área ${area} salva com nota ${notaCalculada}%!`);
         document.getElementById('contador').innerText = `Áreas salvas: ${db.length}`;
     }
 
@@ -178,6 +191,9 @@
 
         let rankingHtml = `<table class="ranking-table"><tr><th>Área</th><th>Responsável</th><th>Nota</th></tr>`;
         let detalhesHtml = "";
+
+        // Ordenar por área para facilitar leitura
+        db.sort((a,b) => a.area - b.area);
 
         db.forEach(d => {
             rankingHtml += `<tr><td>${d.area}</td><td>${d.resp}</td><td>${d.nota}%</td></tr>`;
@@ -193,8 +209,8 @@
                 d.itensRelatados.forEach(item => {
                     detalhesHtml += `
                         <div style="margin-top:10px; border-top:1px solid #eee; padding-top:5px;">
-                            <strong>${item.nome}</strong><br>
-                            <span>Obs: ${item.obs || 'Nenhuma'}</span>
+                            <strong style="${item.nome === 'Condição Insegura' ? 'color:red' : ''}">${item.nome}</strong><br>
+                            <span>Obs: ${item.obs || 'Nenhuma observação'}</span>
                             <div class="foto-grid">
                                 ${item.fotos.map(f => `<img src="${f}" class="foto-resumo">`).join('')}
                             </div>
@@ -206,6 +222,7 @@
 
         document.getElementById('corpo-ranking').innerHTML = rankingHtml + "</table>";
         document.getElementById('corpo-detalhes').innerHTML = detalhesHtml;
+        window.scrollTo(0,0);
     }
 
     function compartilharWA() {
