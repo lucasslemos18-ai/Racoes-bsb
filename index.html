@@ -178,17 +178,54 @@
     }
 
     async function compartilharWA() {
-        let txt = "*AUDITORIA FAB. RAÇÕES BSB*\n\n*Ranking:*\n";
-        db.sort((a,b) => b.nota - a.nota).forEach(d => {
-            let icone = d.nota >= 80 ? "✅" : (d.nota === 0 ? "❌" : "⚠️");
-            txt += `${icone} Área ${d.area}: *${d.nota}%* (Resp: ${d.resp})\n`;
-        });
-        if (navigator.share) {
-            await navigator.share({ title: 'Auditoria BSB', text: txt });
+    if (db.length === 0) return alert("Salve uma área primeiro!");
+
+    let txt = "*📋 AUDITORIA FAB. RAÇÕES BSB*\n";
+    txt += "----------------------------------\n\n";
+    
+    txt += "*🏆 RANKING DE PERFORMANCE:*\n";
+    // Ordena do melhor para o pior
+    const ranking = [...db].sort((a,b) => b.nota - a.nota);
+    ranking.forEach(d => {
+        let icone = d.nota >= 80 ? "✅" : (d.nota === 0 ? "❌" : "⚠️");
+        txt += `${icone} Área ${d.area}: *${d.nota}%* (Resp: ${d.resp})\n`;
+    });
+
+    txt += "\n*🔍 DETALHAMENTO DE PENDÊNCIAS:*\n";
+    db.forEach(d => {
+        // Filtra apenas os itens que tiveram problemas (marcados)
+        const pendencias = d.detalhes.filter(it => it.irregular);
+        
+        if (pendencias.length > 0) {
+            txt += `\n*Área ${d.area}* (Nota: ${d.nota}%)\n`;
+            pendencias.forEach(p => {
+                txt += `• ${p.nome}: _${p.obs || "Sem observação"}_\n`;
+            });
         } else {
+            txt += `\n*Área ${d.area}*: Sem pendências detectadas. ✨\n`;
+        }
+    });
+
+    txt += "\n----------------------------------\n";
+    txt += "_Relatório completo com fotos disponível no PDF oficial._";
+
+    // Tenta usar o compartilhamento nativo do celular (iPhone/Android)
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'Auditoria BSB',
+                text: txt
+            });
+        } catch (e) {
+            // Plano B caso o usuário cancele ou dê erro
             window.open("https://wa.me" + encodeURIComponent(txt), '_blank');
         }
+    } else {
+        // Plano C para navegadores que não suportam Share API
+        window.open("https://wa.me" + encodeURIComponent(txt), '_blank');
     }
+}
 </script>
 </body>
 </html>
+
