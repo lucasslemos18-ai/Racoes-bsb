@@ -59,14 +59,14 @@
 
 <div id="relatorio-view">
     <div style="text-align:center; border-bottom:4px solid #cc0000; padding-bottom: 15px; margin-bottom: 25px;">
-        <h2 style="margin:0; color:#cc0000; text-transform: uppercase;">Relatório de Vistoria Semanal</h2>
+        <h2 style="margin:0; color:#cc0000; text-transform: uppercase;">Relatório Vistoria Fab. Rações</h2>
         <p style="margin:5px 0; font-weight: bold; color: #666;">Emissão: <span id="data-rel"></span></p>
     </div>
     <div id="corpo-ranking"></div>
     <div id="corpo-detalhes"></div>
-    <button class="btn btn-wa no-print" onclick="compartilharWA()">ENVIAR RESUMO NO WHATSAPP</button>
-    <button class="btn btn-save no-print" onclick="window.print()">SALVAR PDF COMPLETO (COM FOTOS)</button>
-    <button class="btn no-print" style="background:#000;" onclick="if(confirm('Zerar todos os dados?')) location.reload()">LIMPAR TUDO / REINICIAR</button>
+    <button class="btn btn-wa no-print" onclick="compartilharWA()">ENVIAR RESUMO WHATSAPP</button>
+    <button class="btn btn-save no-print" onclick="window.print()">SALVAR PDF COMPLETO</button>
+    <button class="btn no-print" style="background:#000;" onclick="if(confirm('Zerar todos os dados?')) location.reload()">REINICIAR</button>
 </div>
 
 <script>
@@ -87,8 +87,8 @@
                     <span style="${it==='Condição Insegura' ? 'color:red;font-weight:bold' : ''}">${it}</span>
                     <input type="checkbox" class="c-check" data-n="${it}">
                 </div>
-                <p class="instrucao">MARQUE SE TIVER PROBLEMAS (-10% na nota)</p>
-                <button class="btn-foto" onclick="document.getElementById('in-${it}').click()">＋ ADICIONAR FOTO</button>
+                <p class="instrucao">${it === 'Condição Insegura' ? 'ZERA A NOTA' : 'FALHA: -10% NA NOTA'}</p>
+                <button class="btn-foto" onclick="document.getElementById('in-${it}').click()">＋ FOTO</button>
                 <input type="file" id="in-${it}" accept="image/*" capture="camera" style="display:none" onchange="processarFoto('${it}', this)">
                 <div id="pre-${it}" class="preview"></div>
                 <input type="text" class="c-obs" data-n="${it}" placeholder="Descreva a irregularidade...">
@@ -96,26 +96,23 @@
     });
 
     function processarFoto(it, input) {
-        if (!input.files || !input.files[0]) return;
+        if (!input.files[0]) return;
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
             img.src = e.target.result;
             img.onload = function() {
                 const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 800;
-                let width = img.width, height = img.height;
-                if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } }
-                else { if (height > MAX_WIDTH) { width *= MAX_WIDTH / height; height = MAX_WIDTH; } }
-                canvas.width = width; canvas.height = height;
-                canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+                const MAX = 800;
+                let w = img.width, h = img.height;
+                if (w > h) { if (w > MAX) { h *= MAX/w; w = MAX; } }
+                else { if (h > MAX) { w *= MAX/h; h = MAX; } }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext("2d").drawImage(img, 0, 0, w, h);
                 const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-                
                 fotosTemp[it].push(dataUrl);
-                
                 const thumb = document.createElement('img');
-                thumb.src = dataUrl; 
-                thumb.className = 'thumb';
+                thumb.src = dataUrl; thumb.className = 'thumb';
                 document.getElementById('pre-' + it).appendChild(thumb);
             };
         };
@@ -128,111 +125,75 @@
         const aval = document.getElementById('aval').value;
         if(!area || !resp) return alert("Preencha Área e Responsável!");
         
-        let notaCalculada = 100;
+        let nota = 100;
+        const dadosArea = { area, resp, aval, data: new Date().toLocaleString(), falhas: [] };
         const checks = document.querySelectorAll('.c-check');
         const obss = document.querySelectorAll('.c-obs');
-        
-        const dadosArea = { 
-            area, resp, aval, 
-            data: new Date().toLocaleString(), 
-            itensRelatados: [] 
-        };
 
-        let possuiInsegura = false;
-        let penalidadeComum = 0;
+        let temInsegura = false;
+        let descontos = 0;
 
-        checks.forEach((c, index) => {
-            const nomeItem = c.dataset.n;
+        checks.forEach((c, i) => {
             if(c.checked) {
-                if(nomeItem === "Condição Insegura") {
-                    possuiInsegura = true;
-                } else {
-                    penalidadeComum += 10; // Cada tópico comum perde 10%
-                }
+                const nome = c.dataset.n;
+                if(nome === "Condição Insegura") temInsegura = true;
+                else descontos += 10;
 
-                dadosArea.itensRelatados.push({
-                    nome: nomeItem,
-                    obs: obss[index].value,
-                    fotos: [...fotosTemp[nomeItem]]
+                dadosArea.falhas.push({
+                    nome, obs: obss[i].value, fotos: [...fotosTemp[nome]]
                 });
             }
         });
 
-        // Lógica de nota: Condição Insegura mata a nota (0). Caso contrário, subtrai os 10% de cada item.
-        if(possuiInsegura) {
-            notaCalculada = 0;
-        } else {
-            notaCalculada = 100 - penalidadeComum;
-        }
-
-        dadosArea.nota = notaCalculada < 0 ? 0 : notaCalculada;
+        dadosArea.nota = temInsegura ? 0 : Math.max(0, 100 - descontos);
         db.push(dadosArea);
 
-        // Reset
+        // Resetar Campos
         document.getElementById('area_sel').value = "";
         document.getElementById('resp').value = "";
         checks.forEach(c => c.checked = false);
         obss.forEach(o => o.value = "");
-        itens.forEach(it => {
-            document.getElementById('pre-' + it).innerHTML = "";
-        });
+        itens.forEach(it => document.getElementById('pre-' + it).innerHTML = "");
         initFotos();
 
-        alert(`Área ${area} salva com nota ${notaCalculada}%!`);
+        alert(`Área ${area} salva! Nota: ${dadosArea.nota}%`);
         document.getElementById('contador').innerText = `Áreas salvas: ${db.length}`;
     }
 
     function mostrarRelatorio() {
-        if(db.length === 0) return alert("Nenhuma área salva!");
-        
+        if(db.length === 0) return alert("Salve uma área primeiro!");
         document.getElementById('main-ui').style.display = 'none';
         document.getElementById('relatorio-view').style.display = 'block';
         document.getElementById('data-rel').innerText = new Date().toLocaleDateString();
 
-        let rankingHtml = `<table class="ranking-table"><tr><th>Área</th><th>Responsável</th><th>Nota</th></tr>`;
-        let detalhesHtml = "";
+        let ranking = `<table class="ranking-table"><tr><th>Área</th><th>Responsável</th><th>Nota</th></tr>`;
+        let detalhes = "";
 
-        // Ordenar por área para facilitar leitura
-        db.sort((a,b) => a.area - b.area);
-
-        db.forEach(d => {
-            rankingHtml += `<tr><td>${d.area}</td><td>${d.resp}</td><td>${d.nota}%</td></tr>`;
-            
-            detalhesHtml += `
-                <div class="area-box">
-                    <h3 style="background:#f9f9f9; padding:5px;">Área: ${d.area} - Responsável: ${d.resp} (Nota: ${d.nota}%)</h3>
-                    <p style="font-size:0.8em; color:#666;">Avaliador: ${d.aval} | ${d.data}</p>`;
-            
-            if(d.itensRelatados.length === 0) {
-                detalhesHtml += `<p style="color:green; font-weight:bold;">✓ Conforme</p>`;
-            } else {
-                d.itensRelatados.forEach(item => {
-                    detalhesHtml += `
-                        <div style="margin-top:10px; border-top:1px solid #eee; padding-top:5px;">
-                            <strong style="${item.nome === 'Condição Insegura' ? 'color:red' : ''}">${item.nome}</strong><br>
-                            <span>Obs: ${item.obs || 'Nenhuma observação'}</span>
-                            <div class="foto-grid">
-                                ${item.fotos.map(f => `<img src="${f}" class="foto-resumo">`).join('')}
-                            </div>
-                        </div>`;
-                });
-            }
-            detalhesHtml += `</div>`;
+        db.sort((a,b) => a.area - b.area).forEach(d => {
+            ranking += `<tr><td>${d.area}</td><td>${d.resp}</td><td>${d.nota}%</td></tr>`;
+            detalhes += `<div class="area-box">
+                <h3 style="background:#eee;padding:5px">Área ${d.area} - ${d.resp} (Nota: ${d.nota}%)</h3>
+                ${d.falhas.length === 0 ? '<p style="color:green">✓ Conforme</p>' : d.falhas.map(f => `
+                    <div style="margin-top:10px; border-top:1px solid #ddd">
+                        <b style="${f.nome==='Condição Insegura'?'color:red':''}">${f.nome}</b><br>
+                        <span>Obs: ${f.obs || 'N/A'}</span>
+                        <div class="foto-grid">${f.fotos.map(img => `<img src="${img}" class="foto-resumo">`).join('')}</div>
+                    </div>`).join('')}
+            </div>`;
         });
-
-        document.getElementById('corpo-ranking').innerHTML = rankingHtml + "</table>";
-        document.getElementById('corpo-detalhes').innerHTML = detalhesHtml;
-        window.scrollTo(0,0);
+        document.getElementById('corpo-ranking').innerHTML = ranking + "</table>";
+        document.getElementById('corpo-detalhes').innerHTML = detalhes;
     }
 
     function compartilharWA() {
-        let texto = "*RESUMO VISTORIA SEMANAL*\n\n";
+        let txt = "*RESUMO VISTORIA SEMANAL RAÇÕES BSB*\n\n";
         db.forEach(d => {
-            texto += `Área ${d.area}: ${d.nota}% (${d.resp})\n`;
+            txt += `Area ${d.area}: ${d.nota}% (${d.resp})\n`;
         });
-        window.open(`https://api.whatsapp.com{encodeURIComponent(texto)}`);
+        // Formato wa.me para maior compatibilidade
+        const url = "https://wa.me" + encodeURIComponent(txt);
+        window.open(url, "_blank");
     }
 </script>
-
 </body>
 </html>
