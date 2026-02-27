@@ -96,7 +96,7 @@
     });
 
     function processarFoto(it, input) {
-        if (!input.files[0]) return;
+        if (!input.files || !input.files[0]) return;
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
@@ -125,7 +125,6 @@
         const aval = document.getElementById('aval').value;
         if(!area || !resp) return alert("Preencha Área e Responsável!");
         
-        let nota = 100;
         const dadosArea = { area, resp, aval, data: new Date().toLocaleString(), falhas: [] };
         const checks = document.querySelectorAll('.c-check');
         const obss = document.querySelectorAll('.c-obs');
@@ -148,7 +147,6 @@
         dadosArea.nota = temInsegura ? 0 : Math.max(0, 100 - descontos);
         db.push(dadosArea);
 
-        // Resetar Campos
         document.getElementById('area_sel').value = "";
         document.getElementById('resp').value = "";
         checks.forEach(c => c.checked = false);
@@ -186,13 +184,15 @@
     }
 
     function compartilharWA() {
+        if (db.length === 0) return;
         let txt = "*RESUMO VISTORIA SEMANAL RAÇÕES BSB*\n\n";
         db.forEach(d => {
             txt += `Area ${d.area}: ${d.nota}% (${d.resp})\n`;
         });
-        // Formato wa.me para maior compatibilidade
-        const url = "https://wa.me" + encodeURIComponent(txt);
-        window.open(url, "_blank");
+        
+        // Uso de wa.me com redirecionamento direto
+        const link = "https://wa.me" + encodeURIComponent(txt);
+        window.location.href = link;
     }
 </script>
 </body>
