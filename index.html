@@ -3,32 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fab. Rações BSB - Auditoria Oficial</title>
+    <title>Fab. Rações BSB - Auditoria</title>
     <style>
         body { font-family: -apple-system, system-ui, sans-serif; padding: 15px; background: #f0f2f5; color: #333; margin: 0; }
         .no-print { display: block; }
-        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px; border-radius: 12px; border-top: 6px solid #cc0000; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .header img { height: 35px; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 12px; border-top: 6px solid #cc0000; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header img { height: 32px; }
         .card { background: white; padding: 18px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         h3 { color: #cc0000; margin: 0 0 10px 0; border-bottom: 2px solid #f0f2f5; padding-bottom: 8px; font-size: 1.1em; }
         input, select { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; background: #fafafa; }
         .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
-        .instrucao { font-size: 12px; color: #666; margin-bottom: 10px; font-style: italic; }
+        .instrucao { font-size: 11px; color: #d93025; margin-bottom: 10px; font-weight: bold; }
         .btn-foto { background: #6c757d; color: white; border: none; padding: 14px; border-radius: 10px; width: 100%; font-weight: bold; margin: 8px 0; cursor: pointer; }
         .preview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
         .thumb { width: 85px; height: 85px; object-fit: cover; border-radius: 10px; border: 3px solid #004a99; }
-        .btn { width: 100%; padding: 20px; border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 17px; margin: 10px 0; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,0.1); }
+        .btn { width: 100%; padding: 20px; border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 17px; margin: 10px 0; cursor: pointer; }
         .btn-save { background: #004a99; }
         .btn-report { background: #28a745; }
-        .btn-wa { background: #25D366; }
         #relatorio-view { display: none; background: white; padding: 20px; min-height: 100vh; }
-        .ranking-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; background: #fff; }
+        .ranking-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
         .ranking-table th, .ranking-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
         .ranking-table th { background: #cc0000; color: white; }
         .area-box { border: 2px solid #eee; border-radius: 12px; padding: 15px; margin-bottom: 25px; page-break-inside: avoid; }
         .foto-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
-        .foto-resumo { width: 140px; height: 140px; object-fit: cover; border-radius: 8px; border: 1px solid #ccc; }
-        @media print { .no-print { display: none !important; } #relatorio-view { display: block !important; } body { background: white; padding: 0; } }
+        .foto-resumo { width: 130px; height: 130px; object-fit: cover; border-radius: 8px; border: 1px solid #ccc; }
+        @media print { .no-print { display: none !important; } #relatorio-view { display: block !important; } }
     </style>
 </head>
 <body>
@@ -58,15 +57,12 @@
 </div>
 
 <div id="relatorio-view">
-    <div style="text-align:center; border-bottom:4px solid #cc0000; padding-bottom: 15px; margin-bottom: 25px;">
-        <h2 style="margin:0; color:#cc0000;">AUDITORIA - FAB. RAÇÕES BSB</h2>
-        <p style="margin:5px 0; font-weight: bold; color: #666;">Emissão: <span id="data-rel"></span></p>
-    </div>
+    <h2 style="text-align:center; color:red; border-bottom:4px solid #cc0000; padding-bottom: 15px;">AUDITORIA RAÇÕES BSB</h2>
     <div id="corpo-ranking"></div>
     <div id="corpo-detalhes"></div>
-    <button class="btn btn-wa no-print" onclick="compartilharWA()">ENVIAR RANKING NO WHATSAPP</button>
-    <button class="btn btn-save no-print" onclick="window.print()">SALVAR PDF COMPLETO</button>
-    <button class="btn no-print" style="background:#000;" onclick="if(confirm('Zerar todas as notas e fotos salvas?')) location.reload()">LIMPAR TUDO / REINICIAR</button>
+    <button class="btn btn-report no-print" onclick="compartilharWA()">COMPARTILHAR NO WHATSAPP</button>
+    <button class="btn btn-save no-print" onclick="window.print()">SALVAR PDF (COM FOTOS)</button>
+    <button class="btn no-print" style="background:#000;" onclick="location.reload()">NOVA AUDITORIA</button>
 </div>
 
 <script>
@@ -80,14 +76,14 @@
         container.innerHTML += `
             <div class="card">
                 <div class="item-row">
-                    <span style="${it==='Condição Insegura'?'color:red;font-weight:bold':''}">${it}</span>
+                    <span style="${it==='Condição Insegura' ? 'color:red;font-weight:bold' : ''}">${it}</span>
                     <input type="checkbox" class="c-check" data-n="${it}">
                 </div>
-                <p class="instrucao">Marque o box acima apenas se houver irregularidade (reduz 20%)</p>
+                <p class="instrucao">MARQUE SE TIVER PROBLEMASn (Reduz nota)</p>
                 <button class="btn-foto" onclick="document.getElementById('in-${it}').click()">＋ ADICIONAR FOTO</button>
                 <input type="file" id="in-${it}" accept="image/*" capture="camera" style="display:none" onchange="processarFoto('${it}', this)">
                 <div id="pre-${it}" class="preview"></div>
-                <input type="text" class="c-obs" data-n="${it}" placeholder="Descreva o problema encontrado...">
+                <input type="text" class="c-obs" data-n="${it}" placeholder="Descreva a irregularidade...">
             </div>`;
     });
 
@@ -113,33 +109,35 @@
             };
         };
         reader.readAsDataURL(input.files[0]);
-        input.value = "";
     }
 
     function salvarArea() {
         const area = document.getElementById('area_sel').value;
         const resp = document.getElementById('resp').value;
-        if(!area || !resp) return alert("Selecione Área e Responsável!");
+        if(!area || !resp) return alert("Preencha Identificação!");
         
-        const dados = { area, resp, aval: document.getElementById('aval').value, nota: 100, data: new Date().toLocaleString('pt-BR'), detalhes: [] };
+        let notaCalculada = 100;
+        const dados = { area, resp, aval: document.getElementById('aval').value, data: new Date().toLocaleString(), detalhes: [] };
+        
         const checks = document.querySelectorAll('.c-check');
         const obss = document.querySelectorAll('.c-obs');
         
-        // NOVA LÓGICA DE PONTUAÇÃO
         const isInseguro = document.querySelector('.c-check[data-n="Condição Insegura"]').checked;
         
         if(isInseguro) {
-            dados.nota = 0; // Se marcar condição insegura, zera tudo.
+            notaCalculada = 0;
         } else {
-            // Cada item marcado (exceto o último) reduz 20 pontos dos 100 iniciais
-            checks.forEach((c, idx) => { 
-                if(c.dataset.n !== "Condição Insegura" && c.checked) {
-                    dados.nota -= 20; 
+            let penalidade = 0;
+            checks.forEach(c => {
+                // Se o item estiver marcado e NÃO for a condição insegura, soma 20 de penalidade
+                if(c.checked && c.dataset.n !== "Condição Insegura") {
+                    penalidade += 20;
                 }
             });
+            notaCalculada = 100 - penalidade;
         }
         
-        dados.nota = Math.max(0, dados.nota);
+        dados.nota = Math.max(0, notaCalculada);
 
         itens.forEach((it, i) => {
             dados.detalhes.push({ nome: it, irregular: checks[i].checked, obs: obss[i].value, fotos: [...fotosTemp[it]] });
@@ -148,8 +146,8 @@
         });
 
         db.push(dados);
-        document.getElementById('contador').innerText = `✅ Áreas Concluídas: ${db.length}`;
-        alert("Área " + area + " salva com nota " + dados.nota + "%");
+        document.getElementById('contador').innerText = `✅ Áreas Salvas: ${db.length}`;
+        alert(`Área ${area} salva! Nota: ${dados.nota}%`);
         window.scrollTo(0,0);
     }
 
@@ -157,20 +155,21 @@
         if(db.length === 0) return alert("Salve uma área!");
         document.getElementById('main-ui').style.display = 'none';
         document.getElementById('relatorio-view').style.display = 'block';
-        document.getElementById('data-rel').innerText = new Date().toLocaleDateString('pt-BR');
         
         const rankingCont = document.getElementById('corpo-ranking');
-        let rHtml = `<h3>Ranking:</h3><table class="ranking-table"><thead><tr><th>Área</th><th>Nota %</th><th>Resp.</th></tr></thead><tbody>`;
-        db.sort((a,b) => b.nota - a.nota).forEach(d => { rHtml += `<tr><td>Área ${d.area}</td><td><b>${d.nota}%</b></td><td>${d.resp}</td></tr>`; });
+        let rHtml = `<table class="ranking-table"><thead><tr><th>Área</th><th>Nota %</th><th>Responsável</th></tr></thead><tbody>`;
+        db.sort((a,b) => b.nota - a.nota).forEach(d => { 
+            rHtml += `<tr><td>Área ${d.area}</td><td><b>${d.nota}%</b></td><td>${d.resp}</td></tr>`; 
+        });
         rankingCont.innerHTML = rHtml + `</tbody></table>`;
 
         const detCont = document.getElementById('corpo-detalhes');
-        detCont.innerHTML = "<hr><h3>Detalhamento de Irregularidades:</h3>";
+        detCont.innerHTML = "<h3>Evidências das Irregularidades:</h3>";
         db.forEach(d => {
-            let h = `<div class="area-box"><b>ÁREA ${d.area} - NOTA: ${d.nota}%</b> (Resp: ${d.resp})<br>`;
+            let h = `<div class="area-box"><b>ÁREA ${d.area} - NOTA: ${d.nota}%</b><br>`;
             d.detalhes.forEach(it => {
                 if(it.irregular) {
-                    h += `<p style="font-size:13px; margin: 8px 0;">❌ <b>${it.nome}</b>: ${it.obs || 'Sem observações'}</p>`;
+                    h += `<p style="font-size:13px; margin: 8px 0;">❌ <b>${it.nome}</b>: ${it.obs}</p>`;
                     if(it.fotos.length > 0) { h += `<div class="foto-grid">` + it.fotos.map(f => `<img src="${f}" class="foto-resumo">`).join('') + `</div>`; }
                 }
             });
@@ -179,15 +178,16 @@
     }
 
     async function compartilharWA() {
-        let txt = "*AUDITORIA FAB. RAÇÕES BSB*\n\n*Ranking de Performance:*\n";
+        let txt = "*AUDITORIA FAB. RAÇÕES BSB*\n\n*Ranking:*\n";
         db.sort((a,b) => b.nota - a.nota).forEach(d => {
-            let i = d.nota >= 80 ? "✅" : (d.nota === 0 ? "❌" : "⚠️");
-            txt += `${i} Área ${d.area}: *${d.nota}%* (Resp: ${d.resp})\n`;
+            let icone = d.nota >= 80 ? "✅" : (d.nota === 0 ? "❌" : "⚠️");
+            txt += `${icone} Área ${d.area}: *${d.nota}%* (Resp: ${d.resp})\n`;
         });
         if (navigator.share) {
-            try { await navigator.share({ title: 'Auditoria BSB', text: txt }); } 
-            catch (e) { window.open("https://wa.me" + encodeURIComponent(txt), '_blank'); }
-        } else { window.open("https://wa.me" + encodeURIComponent(txt), '_blank'); }
+            await navigator.share({ title: 'Auditoria BSB', text: txt });
+        } else {
+            window.open("https://wa.me" + encodeURIComponent(txt), '_blank');
+        }
     }
 </script>
 </body>
