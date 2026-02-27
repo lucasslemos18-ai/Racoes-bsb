@@ -70,14 +70,17 @@
 </div>
 
 <script>
-    // Tópicos atualizados conforme solicitado
     const itens = ["Estruturas", "Elétrica", "Equipamentos", "Organização 5S", "Condição Insegura"];
     const db = [];
     let fotosTemp = {};
 
+    function initFotos() {
+        itens.forEach(it => fotosTemp[it] = []);
+    }
+    initFotos();
+
     const container = document.getElementById('checklist-container');
     itens.forEach(it => {
-        fotosTemp[it] = [];
         container.innerHTML += `
             <div class="card">
                 <div class="item-row">
@@ -93,7 +96,7 @@
     });
 
     function processarFoto(it, input) {
-        if (!input.files) return;
+        if (!input.files || !input.files[0]) return;
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
@@ -107,146 +110,112 @@
                 canvas.width = width; canvas.height = height;
                 canvas.getContext("2d").drawImage(img, 0, 0, width, height);
                 const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+                
                 fotosTemp[it].push(dataUrl);
+                
                 const thumb = document.createElement('img');
-                thumb.src = dataUrl; thumb.className = 'thumb';
+                thumb.src = dataUrl; 
+                thumb.className = 'thumb';
                 document.getElementById('pre-' + it).appendChild(thumb);
             };
         };
-        reader.readAsDataURL(input.files);
+        reader.readAsDataURL(input.files[0]);
     }
 
-function salvarArea() {
-    const area = document.getElementById('area_sel').value;
-    const resp = document.getElementById('resp').value;
-    const aval = document.getElementById('aval').value;
-    if(!area || !resp) return alert("Preencha Área e Responsável!");
-    
-    let notaCalculada = 100;
-    const checks = document.querySelectorAll('.c-check');
-    const obss = document.querySelectorAll('.c-obs');
-    
-    const dadosArea = { 
-        area, resp, aval, 
-        data: new Date().toLocaleString(), 
-        itensRelatados: [] 
-    };
-
-    checks.forEach((c, index) => {
-        const nomeItem = c.dataset.n;
-        if(c.checked) {
-            if(nomeItem === "Condição Insegura") notaCalculada = 0;
-            else notaCalculada -= 25;
-
-            // Salva o item, a observação e COPIA as fotos do temporário
-            dadosArea.itensRelatados.push({
-                nome: nomeItem,
-                obs: obss[index].value,
-                fotos: [...fotosTemp[nomeItem]] // Faz uma cópia das fotos
-            });
-        }
-    });
-
-    dadosArea.nota = notaCalculada < 0 ? 0 : notaCalculada;
-    db.push(dadosArea);
-
-    // Limpa o formulário para a próxima área
-    document.getElementById('area_sel').value = "";
-    document.getElementById('resp').value = "";
-    checks.forEach(c => c.checked = false);
-    obss.forEach(o => o.value = "");
-    itens.forEach(it => {
-        fotosTemp[it] = []; // Limpa fotos temporárias
-        document.getElementById('pre-' + it).innerHTML = ""; // Limpa visualmente
-    });
-
-    alert("Área " + area + " salva com sucesso!");
-    document.getElementById('contador').innerText = `Áreas salvas: ${db.length}`;
-}
-
-
-    function mostrarRelatorio() {
-    if(db.length === 0) return alert("Nenhuma área salva!");
-    
-    document.getElementById('main-ui').style.display = 'none';
-    document.getElementById('relatorio-view').style.display = 'block';
-    document.getElementById('data-rel').innerText = new Date().toLocaleDateString();
-
-    let htmlRanking = `<table class="ranking-table"><tr><th>Área</th><th>Responsável</th><th>Nota</th></tr>`;
-    let htmlDetalhes = "";
-
-    // Ordenar por nota (opcional)
-    db.sort((a, b) => a.nota - b.nota);
-
-    db.forEach(d => {
-        htmlRanking += `<tr><td>${d.area}</td><td>${d.resp}</td><td>${d.nota}%</td></tr>`;
+    function salvarArea() {
+        const area = document.getElementById('area_sel').value;
+        const resp = document.getElementById('resp').value;
+        const aval = document.getElementById('aval').value;
+        if(!area || !resp) return alert("Preencha Área e Responsável!");
         
-        htmlDetalhes += `
-            <div class="area-box">
-                <h3 style="background:#eee; padding:5px;">Área: ${d.area} - Resp: ${d.resp} (Nota: ${d.nota}%)</h3>
-                <p>Avaliador: ${d.aval} em ${d.data}</p>`;
+        let notaCalculada = 100;
+        const checks = document.querySelectorAll('.c-check');
+        const obss = document.querySelectorAll('.c-obs');
         
-        d.itensRelatados.forEach(item => {
-            htmlDetalhes += `
-                <div style="margin-top:10px; border-top:1px solid #eee;">
-                    <strong>Item: ${item.nome}</strong><br>
-                    <span>Obs: ${item.obs || 'Sem observação'}</span>
-                    <div class="foto-grid">`;
-            
-            // Loop para exibir as fotos de cada item
-            item.fotos.forEach(f => {
-                htmlDetalhes += `<img src="${f}" class="foto-resumo">`;
-            });
+        const dadosArea = { 
+            area, resp, aval, 
+            data: new Date().toLocaleString(), 
+            itensRelatados: [] 
+        };
 
-            htmlDetalhes += `</div></div>`;
-        });
-        
-        htmlDetalhes += `</div>`;
-    });
+        checks.forEach((c, index) => {
+            const nomeItem = c.dataset.n;
+            if(c.checked) {
+                if(nomeItem === "Condição Insegura") notaCalculada = 0;
+                else notaCalculada -= 25;
 
-    htmlRanking += "</table>";
-    document.getElementById('corpo-ranking').innerHTML = htmlRanking;
-    document.getElementById('corpo-detalhes').innerHTML = htmlDetalhes;
-}
-    async function compartilharWA() {
-        if (db.length === 0) return alert("Salve uma área primeiro!");
-        const ultimoAvaliador = db[db.length - 1].aval || "Não informado";
-        const dataAtual = new Date().toLocaleDateString('pt-BR');
-
-        let txt = "*📋 VISTORIA SEMANAL FAB. RAÇÕES BSB*\n";
-        txt += `*Data:* ${dataAtual}\n`;
-        txt += "----------------------------------\n\n";
-        
-        txt += "*🏆 RANKING DE PERFORMANCE:*\n";
-        const ranking = [...db].sort((a,b) => b.nota - a.nota);
-        ranking.forEach(d => {
-            let icone = d.nota >= 75 ? "✅" : (d.nota === 0 ? "❌" : "⚠️");
-            txt += `${icone} Área ${d.area}: *${d.nota}%* (Resp: ${d.resp})\n`;
-        });
-
-        txt += "\n*🔍 DETALHAMENTO DE PENDÊNCIAS:*\n";
-        db.forEach(d => {
-            const pendencias = d.detalhes.filter(it => it.irregular);
-            if (pendencias.length > 0) {
-                txt += `\n*Área ${d.area}* (Nota: ${d.nota}%)\n`;
-                pendencias.forEach(p => { txt += `• ${p.nome}: _${p.obs || "Sem obs"}_\n`; });
-            } else {
-                txt += `\n*Área ${d.area}*: Sem pendências. ✨\n`;
+                dadosArea.itensRelatados.push({
+                    nome: nomeItem,
+                    obs: obss[index].value,
+                    fotos: [...fotosTemp[nomeItem]]
+                });
             }
         });
 
-        txt += "\n----------------------------------\n";
-        txt += `*✍️ Avaliador:* ${ultimoAvaliador}\n`;
-        txt += "_Relatório completo com fotos no PDF oficial._";
+        dadosArea.nota = notaCalculada < 0 ? 0 : notaCalculada;
+        db.push(dadosArea);
 
-        if (navigator.share) {
-            try { await navigator.share({ title: 'Vistoria BSB', text: txt }); } 
-            catch (e) { window.open("https://wa.me" + encodeURIComponent(txt), '_blank'); }
-        } else {
-            window.open("https://wa.me" + encodeURIComponent(txt), '_blank');
-        }
+        // Limpeza
+        document.getElementById('area_sel').value = "";
+        document.getElementById('resp').value = "";
+        checks.forEach(c => c.checked = false);
+        obss.forEach(o => o.value = "");
+        itens.forEach(it => {
+            document.getElementById('pre-' + it).innerHTML = "";
+        });
+        initFotos();
+
+        alert("Área " + area + " salva!");
+        document.getElementById('contador').innerText = `Áreas salvas: ${db.length}`;
+    }
+
+    function mostrarRelatorio() {
+        if(db.length === 0) return alert("Nenhuma área salva!");
+        
+        document.getElementById('main-ui').style.display = 'none';
+        document.getElementById('relatorio-view').style.display = 'block';
+        document.getElementById('data-rel').innerText = new Date().toLocaleDateString();
+
+        let rankingHtml = `<table class="ranking-table"><tr><th>Área</th><th>Responsável</th><th>Nota</th></tr>`;
+        let detalhesHtml = "";
+
+        db.forEach(d => {
+            rankingHtml += `<tr><td>${d.area}</td><td>${d.resp}</td><td>${d.nota}%</td></tr>`;
+            
+            detalhesHtml += `
+                <div class="area-box">
+                    <h3 style="background:#f9f9f9; padding:5px;">Área: ${d.area} - Responsável: ${d.resp} (Nota: ${d.nota}%)</h3>
+                    <p style="font-size:0.8em; color:#666;">Avaliador: ${d.aval} | ${d.data}</p>`;
+            
+            if(d.itensRelatados.length === 0) {
+                detalhesHtml += `<p style="color:green; font-weight:bold;">✓ Conforme</p>`;
+            } else {
+                d.itensRelatados.forEach(item => {
+                    detalhesHtml += `
+                        <div style="margin-top:10px; border-top:1px solid #eee; padding-top:5px;">
+                            <strong>${item.nome}</strong><br>
+                            <span>Obs: ${item.obs || 'Nenhuma'}</span>
+                            <div class="foto-grid">
+                                ${item.fotos.map(f => `<img src="${f}" class="foto-resumo">`).join('')}
+                            </div>
+                        </div>`;
+                });
+            }
+            detalhesHtml += `</div>`;
+        });
+
+        document.getElementById('corpo-ranking').innerHTML = rankingHtml + "</table>";
+        document.getElementById('corpo-detalhes').innerHTML = detalhesHtml;
+    }
+
+    function compartilharWA() {
+        let texto = "*RESUMO VISTORIA SEMANAL*\n\n";
+        db.forEach(d => {
+            texto += `Área ${d.area}: ${d.nota}% (${d.resp})\n`;
+        });
+        window.open(`https://api.whatsapp.com{encodeURIComponent(texto)}`);
     }
 </script>
+
 </body>
 </html>
-
